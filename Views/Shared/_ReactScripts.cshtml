@@ -1,0 +1,16 @@
+@if (ViewBag.IsDevelopment == true)
+{
+    <script type="module">
+        import RefreshRuntime from 'http://localhost:5101/@@react-refresh';
+        RefreshRuntime.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+    </script>
+    <script type="module" src="http://localhost:5101/home/index.jsx"></script>
+}
+else
+{
+    <script type="module" src="/js/home/index.js"></script>
+    <link rel="stylesheet" href="/js/home/assets/index.css" />
+}
