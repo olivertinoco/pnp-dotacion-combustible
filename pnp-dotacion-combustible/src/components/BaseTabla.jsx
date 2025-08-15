@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-export const BaseTabla = () => {
+export const BaseTabla = ({ data }) => {
   const tableContainerRef = useRef(null);
   const scrollBarRef = useRef(null);
 
@@ -74,7 +74,6 @@ export const BaseTabla = () => {
         </table>
       </div>
 
-
       <div
         ref={scrollBarRef}
         className="fixed bottom-0 left-0 w-full h-5 overflow-x-auto bg-gray-100"
@@ -84,7 +83,8 @@ export const BaseTabla = () => {
           className="h-1"
           style={{
             width: `${columns.reduce(
-              (acc, col) => acc + parseInt(col.width, 10), 0
+              (acc, col) => acc + parseInt(col.width, 10),
+              0,
             )}px`,
           }}
         ></div>
