@@ -1,7 +1,7 @@
 import { useData } from "../context/DataProvider";
 
 const EjeCarga = () => {
-  const { data } = useData();
+  const { listaDotacion } = useData();
 
   return (
     <div
@@ -14,7 +14,7 @@ const EjeCarga = () => {
         whiteSpace: "pre",
       }}
     >
-      {data.map((linea, idx) => (
+      {listaDotacion.map((linea, idx) => (
         <div key={idx}>{linea}</div>
       ))}
     </div>

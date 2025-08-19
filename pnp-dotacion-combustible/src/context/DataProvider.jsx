@@ -3,7 +3,10 @@ import { createContext, useContext, useState, useEffect } from "react";
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState({
+    listaDotacion: [],
+    listaVehiculo: [],
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,8 +19,11 @@ export const DataProvider = ({ children }) => {
           console.error("Error en el servidor al obtener datos");
           return;
         }
-        const rows = textData.trim().split("~");
-        setData(rows);
+        const [dotacionRaw, vehiculoRaw] = textData.trim().split("^");
+        setData({
+          listaDotacion: dotacionRaw?.split("~") ?? [],
+          listaVehiculo: vehiculoRaw?.split("~") ?? [],
+        });
       } catch (err) {
         console.error("Error al obtener datos:", err);
       }
@@ -25,9 +31,7 @@ export const DataProvider = ({ children }) => {
     fetchData();
   }, []);
 
-  return (
-    <DataContext.Provider value={{ data }}>{children}</DataContext.Provider>
-  );
+  return <DataContext.Provider value={data}>{children}</DataContext.Provider>;
 };
 
 export const useData = () => useContext(DataContext);
