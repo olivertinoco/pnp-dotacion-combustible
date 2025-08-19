@@ -1,28 +1,38 @@
 import { useRef, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import Loader from "../components/Loader";
 import { useData } from "../context/DataProvider";
 
-export const BaseTabla = () => {
-  const { data } = useData();
-  const tableContainerRef = useRef(null);
+export const BaseTabla = ({ tipo, title }) => {
+  const { listaDotacion, listaVehiculo } = useData();
   const scrollBarRef = useRef(null);
 
+  const rows = tipo === "dotacion" ? listaDotacion : listaVehiculo;
+
   const titulo = useMemo(
-    () => (data && data.length > 1 ? data[0].split("|") : []),
-    [data],
+    () => (rows && rows.length > 1 ? rows[0].split("|") : []),
+    [rows],
   );
 
   const cabecera = useMemo(() => {
-    if (data && data.length > 1) {
-      return data[1].split("|").map((val, i) => [titulo[i], Number(val)]);
+    if (rows && rows.length > 1) {
+      return rows[1].split("|").map((val, i) => [titulo[i], Number(val)]);
     }
     return [];
-  }, [data, titulo]);
+  }, [rows, titulo]);
 
   const totalWidth = useMemo(
     () => cabecera.reduce((acc, col) => acc + col[1], 0),
     [cabecera],
   );
+
+  const tableContainerRef = useRef(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length - 2,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 35,
+  });
 
   const syncScroll = (source) => {
     if (!tableContainerRef.current || !scrollBarRef.current) return;
@@ -35,23 +45,29 @@ export const BaseTabla = () => {
     });
   };
 
-  if (!data || data.length <= 1) {
+  if (!rows || rows.length <= 1) {
     return <Loader />;
   }
+
+  const totalRegistros = rows.length > 2 ? rows.length - 2 : 0;
 
   return (
     <>
       <div
         ref={tableContainerRef}
-        className="bg-white shadow-lg rounded-lg border border-gray-200"
+        className="relative overflow-auto max-h-[90vh] bg-white shadow-lg rounded-lg border border-gray-200"
         onScroll={() => syncScroll("table")}
-        style={{
-          overflowX: "hidden",
-          overflowY: "auto",
-        }}
       >
-        <table className="border-collapse">
-          <thead className="bg-gray-50 sticky top-0 z-10">
+        <div className="sticky top-0 left-0 z-30 bg-white shadow-md">
+          <h2 className="text-left text-xl font-bold text-gray-800 py-2 px-4">
+            {title}{" "}
+            <span className="ml-2 text-sm font-medium text-gray-500">
+              ({totalRegistros} vehiculos)
+            </span>
+          </h2>
+        </div>
+        <table className="text-sm leading-relaxed border-collapse w-max">
+          <thead className="sticky top-[38px] z-20 bg-gray-50">
             <tr>
               {cabecera.map((col, id) => (
                 <th
@@ -64,18 +80,29 @@ export const BaseTabla = () => {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {data.slice(2).map((row, i) => {
-              const oneRow = row.split("|");
+          <tbody
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const fila = rows[virtualRow.index + 2];
+              const oneRow = fila.split("|");
               return (
                 <tr
-                  key={i}
-                  className="cursor-pointer odd:bg-white even:bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
+                  key={virtualRow.index}
+                  className="absolute top-0 left-0 w-full flex"
+                  style={{
+                    transform: `translateY(${virtualRow.start}px)`,
+                    display: "table",
+                    tableLayout: "fixed",
+                  }}
                 >
                   {cabecera.map((col, j) => (
                     <td
                       key={j}
-                      className="px-4 py-2 border-b border-gray-200"
+                      className="px-4 py-2 border-b border-gray-200 font-normal"
                       style={{ minWidth: `${col[1]}px` }}
                     >
                       {oneRow[j]}
