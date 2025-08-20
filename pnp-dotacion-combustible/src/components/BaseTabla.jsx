@@ -6,7 +6,6 @@ import { useData } from "../context/DataProvider";
 export const BaseTabla = ({ tipo, title }) => {
   const { listaDotacion, listaVehiculo } = useData();
   const scrollBarRef = useRef(null);
-
   const rows = tipo === "dotacion" ? listaDotacion : listaVehiculo;
 
   const titulo = useMemo(
@@ -58,6 +57,7 @@ export const BaseTabla = ({ tipo, title }) => {
         className="relative overflow-auto max-h-[90vh] bg-white shadow-lg rounded-lg border border-gray-200"
         onScroll={() => syncScroll("table")}
       >
+        {/* Título */}
         <div className="sticky top-0 left-0 z-30 bg-white shadow-md">
           <h2 className="text-left text-xl font-bold text-gray-800 py-2 px-4">
             {title}{" "}
@@ -66,55 +66,70 @@ export const BaseTabla = ({ tipo, title }) => {
             </span>
           </h2>
         </div>
-        <table className="text-sm leading-relaxed border-collapse w-max">
-          <thead className="sticky top-[38px] z-20 bg-gray-50">
-            <tr>
-              {cabecera.map((col, id) => (
-                <th
-                  key={id}
-                  className="px-4 py-3 border-b border-gray-200 text-left text-gray-700 uppercase tracking-wider"
-                  style={{ minWidth: `${col[1]}px` }}
-                >
-                  {col[0]}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              position: "relative",
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const fila = rows[virtualRow.index + 2];
-              const oneRow = fila.split("|");
-              return (
-                <tr
-                  key={virtualRow.index}
-                  className="absolute top-0 left-0 w-full flex"
-                  style={{
-                    transform: `translateY(${virtualRow.start}px)`,
-                    display: "table",
-                    tableLayout: "fixed",
-                  }}
-                >
-                  {cabecera.map((col, j) => (
-                    <td
-                      key={j}
-                      className="px-4 py-2 border-b border-gray-200 font-normal"
-                      style={{ minWidth: `${col[1]}px` }}
-                    >
-                      {oneRow[j]}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+
+        {/* Cabecera fija */}
+        <div
+          className="sticky top-10 z-20 flex border-b border-gray-300 bg-gray-100"
+          style={{ width: `${totalWidth}px` }}
+        >
+          {cabecera.map((col, id) => (
+            <div
+              key={id}
+              className="px-2 py-2 font-semibold text-left"
+              style={{
+                width: `${col[1]}px`,
+                minWidth: `${col[1]}px`,
+                maxWidth: `${col[1]}px`,
+                flexShrink: 0,
+              }}
+            >
+              {col[0]}
+            </div>
+          ))}
+        </div>
+
+        {/* Body virtualizado */}
+        <div
+          className="relative"
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: `${totalWidth}px`,
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const fila = rows[virtualRow.index + 2];
+            const oneRow = fila.split("|");
+
+            return (
+              <div
+                key={virtualRow.index}
+                className="absolute left-0 flex border-b border-gray-200"
+                style={{
+                  transform: `translateY(${virtualRow.start}px)`,
+                  width: `${totalWidth}px`,
+                }}
+              >
+                {cabecera.map((col, j) => (
+                  <div
+                    key={j}
+                    className="px-2 py-2 text-left truncate"
+                    style={{
+                      width: `${col[1]}px`,
+                      minWidth: `${col[1]}px`,
+                      maxWidth: `${col[1]}px`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {oneRow[j]}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Barra de scroll sincronizada */}
       <div
         ref={scrollBarRef}
         className="fixed bottom-0 left-0 w-full h-5 overflow-x-auto bg-gray-100"

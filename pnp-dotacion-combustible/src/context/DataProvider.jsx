@@ -6,6 +6,9 @@ export const DataProvider = ({ children }) => {
   const [data, setData] = useState({
     listaDotacion: [],
     listaVehiculo: [],
+    hlpTipoFuncion: [],
+    hlpTipoRegistro: [],
+    hlpTipoVehiculo: [],
   });
 
   useEffect(() => {
@@ -19,10 +22,19 @@ export const DataProvider = ({ children }) => {
           console.error("Error en el servidor al obtener datos");
           return;
         }
-        const [dotacionRaw, vehiculoRaw] = textData.trim().split("^");
+        const [
+          dotacionRaw,
+          vehiculoRaw,
+          tipoFuncionRaw,
+          tipoRegistroRaw,
+          tipoVehiculoRaw,
+        ] = textData.trim().split("^");
         setData({
           listaDotacion: dotacionRaw?.split("~") ?? [],
           listaVehiculo: vehiculoRaw?.split("~") ?? [],
+          hlpTipoFuncion: tipoFuncionRaw?.split("~") ?? [],
+          hlpTipoRegistro: tipoRegistroRaw?.split("~") ?? [],
+          hlpTipoVehiculo: tipoVehiculoRaw?.split("~") ?? [],
         });
       } catch (err) {
         console.error("Error al obtener datos:", err);
