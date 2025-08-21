@@ -118,12 +118,33 @@ const FiltrosGrilla = ({ visible = false, onBuscar }) => {
         </div>
 
         <div className="flex flex-col justify-end">
-          <button
-            className="bg-blue-600 text-white font-semibold px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition h-11 w-auto self-start"
-            onClick={handleBuscar}
-          >
-            Buscar
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="bg-blue-600 text-white font-semibold px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition h-11"
+              onClick={handleBuscar}
+            >
+              Buscar
+            </button>
+            <button
+              className="bg-gray-300 text-gray-700 font-semibold px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition h-11"
+              onClick={() => {
+                setTipoRegistro("");
+                setTipoFuncion("");
+                setTipoVehiculo("");
+                setPlacaInterna("");
+                if (onBuscar) {
+                  onBuscar({
+                    tipoRegistro: "",
+                    tipoFuncion: "",
+                    tipoVehiculo: "",
+                    placaInterna: "",
+                  });
+                }
+              }}
+            >
+              Limpiar
+            </button>
+          </div>
         </div>
       </div>
     </div>
