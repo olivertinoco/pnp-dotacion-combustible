@@ -23,54 +23,68 @@ export default function App() {
     <div className="p-5 relative">
       <FiltrosGrilla visible={mostrarFiltros} onBuscar={manejarBuscar} />
       {isPending && <Loader />}
-      <div className="flex gap-2 mb-4">
-        <button
-          className={`px-4 py-2 rounded ${
-            activeTab === "dotacion" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => switchTab("dotacion")}
-        >
-          Programacion Dotación
-        </button>
-        <button
-          className={`px-4 py-2 rounded ${
-            activeTab === "vehiculo" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => switchTab("vehiculo")}
-        >
-          Programacion Vehículos
-        </button>
-        <button
-          className={`px-4 py-2 rounded bg-blue-500 text-white`}
-          onClick={() => {
-            setMostrarFiltros((prev) => {
-              const nuevoValor = !prev;
-              if (nuevoValor) {
-                setFiltrosAplicados(null);
-              }
-              return nuevoValor;
-            });
-          }}
-        >
-          {mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros"}
-        </button>
+      <div className="flex justify-between mb-4">
+        <div className="flex gap-2">
+          <button
+            className={`px-4 py-2 rounded ${
+              activeTab === "dotacion"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+            onClick={() => switchTab("dotacion")}
+          >
+            Programacion Dotación
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${
+              activeTab === "vehiculo"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
+            }`}
+            onClick={() => switchTab("vehiculo")}
+          >
+            Programacion Vehículos
+          </button>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            className={`px-4 py-2 rounded bg-blue-500 text-white`}
+            onClick={() => {
+              setMostrarFiltros((prev) => {
+                const nuevoValor = !prev;
+                if (nuevoValor) {
+                  setFiltrosAplicados(null);
+                }
+                return nuevoValor;
+              });
+            }}
+          >
+            {mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros"}
+          </button>
+          <button
+            className="px-4 py-2 rounded bg-blue-500 text-white"
+            onClick={() => alert("exportando..")}
+          >
+            Exportar Datos
+          </button>
+        </div>
       </div>
 
       {activeTab === "dotacion" && (
-        <BaseTabla tipo="dotacion" title="Tabla de Dotación de Combustible" />
+        <BaseTabla
+          tipo="dotacion"
+          title="Tabla de Dotación de Combustible"
+          buscar={filtrosAplicados}
+        />
       )}
 
       {activeTab === "vehiculo" && (
-        <BaseTabla tipo="vehiculo" title="Tabla de Vehículos" />
-      )}
-
-      {/* ESTE PUNTO ES SOLO PARA PRUEBAS:
-      ================================*/}
-      {filtrosAplicados && (
-        <div className="mt-4 p-4 border rounded bg-gray-100">
-          <h3 className="font-bold">Filtros aplicados:</h3>
-          <pre>{JSON.stringify(filtrosAplicados, null, 2)}</pre>
-        </div>
+        <BaseTabla
+          tipo="vehiculo"
+          title="Tabla de Vehículos"
+          buscar={filtrosAplicados}
+        />
       )}
     </div>
   );
