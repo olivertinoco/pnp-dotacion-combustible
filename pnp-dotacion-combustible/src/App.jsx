@@ -8,6 +8,7 @@ export default function App() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [filtrosAplicados, setFiltrosAplicados] = useState(null);
+  const [exportExcel, setExportExcel] = useState(false);
 
   const switchTab = (tab) => {
     startTransition(() => {
@@ -64,9 +65,9 @@ export default function App() {
           </button>
           <button
             className="px-4 py-2 rounded bg-blue-500 text-white"
-            onClick={() => alert("exportando..")}
+            onClick={() => setExportExcel(true)}
           >
-            Exportar Datos
+            Exportar Excel
           </button>
         </div>
       </div>
@@ -76,6 +77,8 @@ export default function App() {
           tipo="dotacion"
           title="Tabla de Dotación de Combustible"
           buscar={filtrosAplicados}
+          exportExcel={exportExcel}
+          setExportExcel={setExportExcel}
         />
       )}
 
@@ -84,6 +87,8 @@ export default function App() {
           tipo="vehiculo"
           title="Tabla de Vehículos"
           buscar={filtrosAplicados}
+          exportExcel={exportExcel}
+          setExportExcel={setExportExcel}
         />
       )}
     </div>
