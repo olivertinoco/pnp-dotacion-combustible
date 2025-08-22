@@ -1,96 +1,52 @@
-import { useRef, useMemo, useState, useEffect } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect } from "react";
 import Loader from "../components/Loader";
 import Popup from "../components/Popup";
+import { useFiltradoSincronizado } from "../hooks/useFiltradoSincronizado";
+import { useTablaVirtualizada } from "../hooks/useTablaVirtualizada";
+import { useExportExcel } from "../hooks/useExportExcel";
+import { getTimestamp } from "../utils/getTimestamp";
 import { useData } from "../context/DataProvider";
 
-export const BaseTabla = ({ tipo, title, buscar }) => {
+export const BaseTabla = ({
+  tipo,
+  title,
+  buscar,
+  exportExcel,
+  setExportExcel,
+}) => {
   const { listaDotacion, listaVehiculo } = useData();
-  const [showPopup, setShowPopup] = useState(false);
-  const scrollBarRef = useRef(null);
+  const rowsOriginal = tipo === "vehiculo" ? listaVehiculo : listaDotacion;
 
-  const rowsOriginal = tipo === "dotacion" ? listaDotacion : listaVehiculo;
+  const rows = useFiltradoSincronizado(
+    rowsOriginal,
+    buscar,
+    tipo,
+    listaVehiculo,
+  );
 
-  const rows = useMemo(() => {
-    if (!rowsOriginal) return [];
-    if (tipo === "dotacion") return rowsOriginal;
-    const { tipoRegistro, tipoFuncion, tipoVehiculo, placaInterna } =
-      buscar || {};
-    if (
-      ![tipoRegistro, tipoFuncion, tipoVehiculo, placaInterna].some(Boolean)
-    ) {
-      return rowsOriginal;
-    }
-    const filtrados = rowsOriginal.filter((fila, idx) => {
-      if (idx < 2) return true;
-      const cols = fila.split("|");
+  const {
+    showPopup,
+    setShowPopup,
+    totalRegistros,
+    cabeceraFiltrada,
+    totalWidth,
+    rowVirtualizer,
+    scrollBarRef,
+    tableContainerRef,
+    syncScroll,
+  } = useTablaVirtualizada(rows, rowsOriginal, tipo, buscar);
 
-      if (tipoRegistro && cols[0] !== tipoRegistro.trim()) return false;
-      if (tipoFuncion && cols[1] !== tipoFuncion.trim()) return false;
-      if (tipoVehiculo && cols[2] !== tipoVehiculo.trim()) return false;
-
-      if (placaInterna) {
-        const c5 = (cols[5] ?? "").toString();
-        if (!c5.toUpperCase().startsWith(placaInterna.toUpperCase()))
-          return false;
-      }
-      return true;
-    });
-
-    if (filtrados.length <= 2) {
-      return rowsOriginal.slice(0, 2);
-    }
-    return filtrados;
-  }, [rowsOriginal, buscar, tipo]);
-
-  const totalRegistros = rows.length > 2 ? rows.length - 2 : 0;
-
+  const { exportToExcel } = useExportExcel();
   useEffect(() => {
-    setShowPopup(totalRegistros === 0);
-  }, [totalRegistros, buscar]);
+    if (exportExcel) {
+      const baseName = tipo === "vehiculo" ? "prog-vehiculos" : "prog-dotacion";
+      const timestamp = getTimestamp();
+      const fileName = `${baseName}.${timestamp}.xlsx`;
 
-  const titulo = useMemo(
-    () =>
-      rowsOriginal && rowsOriginal.length > 1 ? rowsOriginal[0].split("|") : [],
-    [rowsOriginal],
-  );
-
-  const cabecera = useMemo(() => {
-    if (rowsOriginal && rowsOriginal.length > 1) {
-      return rowsOriginal[1]
-        .split("|")
-        .map((val, i) => [titulo[i], Number(val)]);
+      exportToExcel(rowsOriginal, fileName, tipo);
+      setExportExcel(false);
     }
-    return [];
-  }, [rowsOriginal, titulo]);
-
-  const cabeceraFiltrada = useMemo(() => {
-    return tipo === "dotacion" ? cabecera : cabecera.slice(3);
-  }, [cabecera, tipo]);
-
-  const totalWidth = useMemo(
-    () => cabeceraFiltrada.reduce((acc, col) => acc + col[1], 0),
-    [cabeceraFiltrada],
-  );
-
-  const tableContainerRef = useRef(null);
-
-  const rowVirtualizer = useVirtualizer({
-    count: rows.length - 2,
-    getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 35,
-  });
-
-  const syncScroll = (source) => {
-    if (!tableContainerRef.current || !scrollBarRef.current) return;
-    window.requestAnimationFrame(() => {
-      if (source === "table") {
-        scrollBarRef.current.scrollLeft = tableContainerRef.current.scrollLeft;
-      } else {
-        tableContainerRef.current.scrollLeft = scrollBarRef.current.scrollLeft;
-      }
-    });
-  };
+  }, [exportExcel, rowsOriginal, tipo, exportToExcel, setExportExcel]);
 
   if (!rows || rows.length <= 1) {
     return <Loader />;
