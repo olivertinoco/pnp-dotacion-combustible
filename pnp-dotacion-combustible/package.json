@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.1",
     "@tanstack/react-virtual": "^3.13.12",
     "file-saver": "^2.0.5",
     "react": "^19.1.1",
@@ -26,6 +29,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "rollup-plugin-visualizer": "^6.0.3",
     "tailwindcss": "^4.1.12",
     "vite": "^7.1.2"
   }
