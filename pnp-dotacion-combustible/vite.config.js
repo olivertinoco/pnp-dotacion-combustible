@@ -1,17 +1,27 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig(({ command }) => {
   const isDev = command === "serve";
-  return{
+  return {
     root: resolve(__dirname, "src"),
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      visualizer({
+        filename: "stats.html",
+        gzipSize: true,
+        brotliSize: true,
+        open: false,
+      }),
+    ],
     build: {
       outDir: resolve(__dirname, "../wwwroot/js/home"),
       cssCodeSplit: true,
