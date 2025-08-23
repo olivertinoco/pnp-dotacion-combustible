@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Loader from "../components/Loader";
 import Popup from "../components/Popup";
 import { useFiltradoSincronizado } from "../hooks/useFiltradoSincronizado";
@@ -6,6 +6,8 @@ import { useTablaVirtualizada } from "../hooks/useTablaVirtualizada";
 import { useExportExcel } from "../hooks/useExportExcel";
 import { getTimestamp } from "../utils/getTimestamp";
 import { useData } from "../context/DataProvider";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 export const BaseTabla = ({
   tipo,
@@ -24,6 +26,18 @@ export const BaseTabla = ({
     listaVehiculo,
   );
 
+  //la paginacion aqui
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 20;
+
+  useEffect(() => {
+    setPage(1);
+  }, [buscar]);
+
+  const start = (page - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const paginatedRows = rows.slice(start, end);
+
   const {
     showPopup,
     setShowPopup,
@@ -34,7 +48,8 @@ export const BaseTabla = ({
     scrollBarRef,
     tableContainerRef,
     syncScroll,
-  } = useTablaVirtualizada(rows, rowsOriginal, tipo, buscar);
+  } = useTablaVirtualizada(paginatedRows, rowsOriginal, tipo, buscar);
+  // } = useTablaVirtualizada(rows, rowsOriginal, tipo, buscar);
 
   const { exportToExcel } = useExportExcel();
   useEffect(() => {
@@ -64,7 +79,7 @@ export const BaseTabla = ({
           <h2 className="text-left text-xl font-bold text-gray-800 py-2 px-4">
             {title}{" "}
             <span className="ml-2 text-sm font-medium text-gray-500">
-              ({totalRegistros} vehiculos)
+              ({rows.length - 2} vehiculos)
             </span>
           </h2>
         </div>
@@ -94,12 +109,15 @@ export const BaseTabla = ({
         <div
           className="relative"
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            // height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${rowVirtualizer.getVirtualItems().length * 35}px`,
             width: `${totalWidth}px`,
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const fila = rows[virtualRow.index + 2];
+            // const fila = rows[virtualRow.index + 2];
+            const fila = paginatedRows[virtualRow.index + 2];
+            if (!fila) return null;
             const oneRow = fila.split("|");
             const filaFiltrada = tipo === "dotacion" ? oneRow : oneRow.slice(3);
 
@@ -140,6 +158,16 @@ export const BaseTabla = ({
       >
         <div className="h-1" style={{ width: `${totalWidth}px` }}></div>
       </div>
+
+      <Stack spacing={2} className="mt-4 flex justify-center">
+        <Pagination
+          count={Math.ceil(rows.length / rowsPerPage)}
+          page={page}
+          onChange={(e, value) => setPage(value)}
+          shape="rounded"
+          color="primary"
+        />
+      </Stack>
 
       <Popup
         show={showPopup}
