@@ -15,6 +15,7 @@ export const BaseTabla = ({
   buscar,
   exportExcel,
   setExportExcel,
+  isPaginar,
 }) => {
   const { listaDotacion, listaVehiculo } = useData();
   const rowsOriginal = tipo === "vehiculo" ? listaVehiculo : listaDotacion;
@@ -26,7 +27,9 @@ export const BaseTabla = ({
     listaVehiculo,
   );
 
-  //la paginacion aqui
+  const dataRows = rows && rows.length > 2 ? rows.slice(2) : [];
+
+  // .... inicio de paginacion ....
   const [page, setPage] = useState(1);
   const rowsPerPage = 20;
 
@@ -34,10 +37,25 @@ export const BaseTabla = ({
     setPage(1);
   }, [buscar]);
 
+  const totalPages = Math.max(1, Math.ceil(dataRows.length / rowsPerPage));
+  useEffect(() => {
+    if (isPaginar && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [isPaginar, page, totalPages]);
+
   const start = (page - 1) * rowsPerPage;
   const end = start + rowsPerPage;
-  const paginatedRows = rows.slice(start, end);
+  const paginatedRows = dataRows.slice(start, end);
 
+  const handlePageChange = (event, newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
+  };
+  // ........ fin paginacion ....
+
+  const datosTabla = isPaginar ? paginatedRows : rows;
   const {
     showPopup,
     setShowPopup,
@@ -48,8 +66,7 @@ export const BaseTabla = ({
     scrollBarRef,
     tableContainerRef,
     syncScroll,
-  } = useTablaVirtualizada(paginatedRows, rowsOriginal, tipo, buscar);
-  // } = useTablaVirtualizada(rows, rowsOriginal, tipo, buscar);
+  } = useTablaVirtualizada(datosTabla, rowsOriginal, tipo, buscar);
 
   const { exportToExcel } = useExportExcel();
   useEffect(() => {
@@ -79,7 +96,9 @@ export const BaseTabla = ({
           <h2 className="text-left text-xl font-bold text-gray-800 py-2 px-4">
             {title}{" "}
             <span className="ml-2 text-sm font-medium text-gray-500">
-              ({rows.length - 2} vehiculos)
+              {isPaginar
+                ? `(${rows.length - 2} vehiculos)`
+                : `(${totalRegistros} vehiculos)`}
             </span>
           </h2>
         </div>
@@ -109,22 +128,24 @@ export const BaseTabla = ({
         <div
           className="relative"
           style={{
-            // height: `${rowVirtualizer.getTotalSize()}px`,
-            height: `${rowVirtualizer.getVirtualItems().length * 35}px`,
+            height: isPaginar
+              ? `${rowVirtualizer.getVirtualItems().length * 35}px`
+              : `${rowVirtualizer.getTotalSize()}px`,
             width: `${totalWidth}px`,
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            // const fila = rows[virtualRow.index + 2];
-            const fila = paginatedRows[virtualRow.index + 2];
+            const base = isPaginar ? 0 : 2;
+            const fila = datosTabla[virtualRow.index + base];
             if (!fila) return null;
             const oneRow = fila.split("|");
             const filaFiltrada = tipo === "dotacion" ? oneRow : oneRow.slice(3);
 
+            const isEven = virtualRow.index % 2 === 0;
             return (
               <div
                 key={virtualRow.index}
-                className="absolute left-0 flex border-b border-gray-200"
+                className={`absolute left-0 flex border-b border-gray-200 cursor-pointe ${isEven ? "bg-white" : "bg-gray-50"} hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150`}
                 style={{
                   transform: `translateY(${virtualRow.start}px)`,
                   width: `${totalWidth}px`,
@@ -149,7 +170,6 @@ export const BaseTabla = ({
           })}
         </div>
       </div>
-
       {/* Barra de scroll sincronizada */}
       <div
         ref={scrollBarRef}
@@ -159,16 +179,17 @@ export const BaseTabla = ({
         <div className="h-1" style={{ width: `${totalWidth}px` }}></div>
       </div>
 
-      <Stack spacing={2} className="mt-4 flex justify-center">
-        <Pagination
-          count={Math.ceil(rows.length / rowsPerPage)}
-          page={page}
-          onChange={(e, value) => setPage(value)}
-          shape="rounded"
-          color="primary"
-        />
-      </Stack>
-
+      {isPaginar && (
+        <Stack spacing={2} className="mt-4 flex justify-center">
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            shape="rounded"
+            color="primary"
+          />
+        </Stack>
+      )}
       <Popup
         show={showPopup}
         onClose={() => setShowPopup(false)}
