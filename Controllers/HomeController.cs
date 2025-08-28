@@ -38,4 +38,30 @@ public class HomeController : Controller
         }
     }
 
+    [HttpPost]
+    public string TraerListaMenus()
+    {
+        try
+        {
+            string rpta = "";
+            string user = Request.Form["data1"].ToString();
+            string clave = Request.Form["data2"].ToString();
+            string usuario = $"{user}|{clave}";
+
+            daSQL odaSQL = new daSQL(_configuration, "Cnx");
+            rpta = odaSQL.ejecutarComando("dbo.usp_loginXmenus", "@data", usuario);
+            if (rpta == "")
+            {
+                _logger.LogError("dbo.usp_loginXmenus '{data}'", usuario);
+                rpta = "error";
+            }
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en backend:");
+            return "error";
+        }
+    }
+
 }

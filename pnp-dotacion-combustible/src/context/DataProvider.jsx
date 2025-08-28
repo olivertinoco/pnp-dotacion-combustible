@@ -1,49 +1,57 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
-  const [data, setData] = useState({
-    listaDotacion: [],
-    listaVehiculo: [],
-    hlpTipoFuncion: [],
-    hlpTipoRegistro: [],
-    hlpTipoVehiculo: [],
-  });
+  const [data, setData] = useState([]);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const url = "/Home/TraerListaDotacionCombustible";
-        const response = await fetch(url);
-        const textData = await response.text();
+  const login = async (usuario, clave) => {
+    try {
+      const formData = new FormData();
+      formData.append("data1", usuario);
+      formData.append("data2", clave);
 
-        if (textData === "error") {
-          console.error("Error en el servidor al obtener datos");
-          return;
-        }
-        const [
-          dotacionRaw,
-          vehiculoRaw,
-          tipoFuncionRaw,
-          tipoRegistroRaw,
-          tipoVehiculoRaw,
-        ] = textData.trim().split("^");
-        setData({
-          listaDotacion: dotacionRaw?.split("~") ?? [],
-          listaVehiculo: vehiculoRaw?.split("~") ?? [],
-          hlpTipoFuncion: tipoFuncionRaw?.split("~") ?? [],
-          hlpTipoRegistro: tipoRegistroRaw?.split("~") ?? [],
-          hlpTipoVehiculo: tipoVehiculoRaw?.split("~") ?? [],
-        });
-      } catch (err) {
-        console.error("Error al obtener datos:", err);
+      const response = await fetch("/Home/TraerListaMenus", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        setError(`Error HTTP: ${response.status}`);
+        setData([]);
+        return { ok: false, error: `Error HTTP: ${response.status}` };
       }
-    };
-    fetchData();
-  }, []);
 
-  return <DataContext.Provider value={data}>{children}</DataContext.Provider>;
+      const textData = await response.text();
+
+      if (textData === "warning") {
+        setError("Usuario o clave incorrecto");
+        setData([]);
+        return { ok: false, error: "Usuario o clave incorrecto" };
+      }
+      if (textData === "error") {
+        setError("Servidor fuera de linea");
+        setData([]);
+        return { ok: false, error: "Servidor fuera de linea" };
+      }
+
+      const rows = textData.trim().split("~");
+      setError(null);
+      setData(rows);
+      return { ok: true, data: rows };
+    } catch (err) {
+      console.error("Error en DataProvider:", err);
+      setError("Error en el provider");
+      return { ok: false, error: "Error en el provider" };
+    }
+  };
+
+  return (
+    <DataContext.Provider value={{ data, error, login }}>
+      {children}
+    </DataContext.Provider>
+  );
 };
 
 export const useData = () => useContext(DataContext);
