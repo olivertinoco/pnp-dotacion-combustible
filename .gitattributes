@@ -1,0 +1,109 @@
+# Establece LF como fin de línea para todos los archivos de texto
+* text=auto eol=lf
+
+# Archivos de código fuente
+*.c     text eol=lf
+*.cpp   text eol=lf
+*.h     text eol=lf
+*.java  text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.py    text eol=lf
+*.rb    text eol=lf
+*.go    text eol=lf
+*.rs    text eol=lf
+*.sh    text eol=lf
+*.sql   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.json  text eol=lf
+*.xml   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+
+# Scripts de Windows: sí requieren CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Archivos binarios o binarios compilados (no convertir nunca)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary
+*.7z    binary
+*.exe   binary
+*.dll   binary
+*.so    binary
+*.jar   binary
+*.class binary
+*.db    binary
+*.mp3   binary
+*.mp4   binary
+*.mov   binary
+*.avi   binary
+
+# === Código fuente ===
+*.cs       text eol=lf
+*.csproj   text eol=lf
+*.sln      text eol=lf
+*.fs       text eol=lf
+*.fsproj   text eol=lf
+*.vb       text eol=lf
+*.vbproj   text eol=lf
+*.props    text eol=lf
+*.targets  text eol=lf
+*.xaml     text eol=lf
+*.json     text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.xml      text eol=lf
+*.md       text eol=lf
+*.sql      text eol=lf
+
+# === Scripts ===
+*.sh       text eol=lf
+*.bash     text eol=lf
+*.ps1      text eol=lf
+*.cmd      text eol=crlf
+*.bat      text eol=crlf
+
+# === Web frontend (si aplica) ===
+*.html     text eol=lf
+*.css      text eol=lf
+*.js       text eol=lf
+*.ts       text eol=lf
+
+# === Binarios (no tocar) ===
+*.dll      binary
+*.exe      binary
+*.pdb      binary
+*.so       binary
+*.a        binary
+*.lib      binary
+*.nupkg    binary
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.pdf      binary
+*.zip      binary
+*.tar      binary
+*.gz       binary
+*.7z       binary
+*.db       binary
+*.mp3      binary
+*.mp4      binary
+*.mov      binary
+
+# === Otros (no tocar) ===
+*.suo      binary
+*.user     binary
+*.lock     text eol=lf
+*.log      text eol=lf
