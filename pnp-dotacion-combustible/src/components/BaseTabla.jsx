@@ -9,14 +9,10 @@ import { useData } from "../context/DataProvider";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 
-export const BaseTabla = ({
-  tipo,
-  title,
-  buscar,
-  exportExcel,
-  setExportExcel,
-  isPaginar,
-}) => {
+export const BaseTabla = ({ configTable }) => {
+  const { tipo, title, buscar, exportExcel, setExportExcel, isPaginar } =
+    configTable;
+
   const { listaDotacion, listaVehiculo } = useData();
   const rowsOriginal = tipo === "vehiculo" ? listaVehiculo : listaDotacion;
 
@@ -170,6 +166,7 @@ export const BaseTabla = ({
           })}
         </div>
       </div>
+
       {/* Barra de scroll sincronizada */}
       <div
         ref={scrollBarRef}
