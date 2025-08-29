@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useData } from "../context/DataProvider";
+import { useNavigateTo } from "../utils/useNavigateTo";
 
 const Login = () => {
   const { login, error } = useData();
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ usuario: "", password: "" });
+  const navigateTo = useNavigateTo();
 
   const handleLogin = async () => {
     let newErrors = { usuario: "", password: "" };
@@ -20,8 +22,7 @@ const Login = () => {
     if (!newErrors.usuario && !newErrors.password) {
       const result = await login(newErrors.usuario, newErrors.password);
       if (result.ok) {
-        // navigateTo("/menu");
-        console.log("Login exitoso", result.data);
+        navigateTo("/menu");
       } else {
         console.log("Error:", result.error);
       }

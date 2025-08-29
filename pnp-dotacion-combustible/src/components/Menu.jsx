@@ -16,7 +16,7 @@ import { useData } from "../context/DataProvider";
 import { useNavigateTo } from "../utils/useNavigateTo";
 import { Outlet } from "react-router-dom";
 
-export default function Menu4() {
+export default function Menu() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openSubItem, setOpenSubItem] = useState(null);
   const [selectedNames, setSelectedNames] = useState({
@@ -40,11 +40,11 @@ export default function Menu4() {
   });
 
   const listaMenuItems = parsedData.filter((item) =>
-    item.codigo.endsWith("00"),
+    item.codigo.endsWith("0000"),
   );
 
   const listaMenuSubItems = parsedData.filter(
-    (item) => !item.codigo.endsWith("00"),
+    (item) => !item.codigo.endsWith("0000"),
   );
 
   const subItemsMap = listaMenuSubItems.reduce((acc, sub) => {
@@ -66,12 +66,16 @@ export default function Menu4() {
 
   return (
     <div>
-      <nav className="w-full bg-gray-800 text-white px-4 py-2 flex items-center">
+      <nav className="w-full h-12  bg-green-800 text-white px-4 py-2 flex items-center">
         <button
           onClick={toggleMenu}
-          className="p-2 rounded hover:bg-gray-700 transition"
+          className="h-full rounded hover:bg-green-700 transition flex items-center justify-center"
         >
-          MENU
+          <img
+            src="/images/logoPNP.jpeg"
+            alt="Menu"
+            className="h-8 w-8 object-contain transition-transform duration-200 hover:scale-110 hover:opacity-90"
+          />
         </button>
         <span className="mx-auto font-semibold">
           {selectedNames.menu}
@@ -79,7 +83,7 @@ export default function Menu4() {
         </span>
         <button
           onClick={handleLogout}
-          className="ml-auto px-3 py-1 rounded bg-red-600 hover:bg-red-700 transition"
+          className="ml-auto px-3 py-1 rounded bg-green-600 hover:bg-green-700 transition"
         >
           Cerrar sesión
         </button>
@@ -93,7 +97,7 @@ export default function Menu4() {
         sx={{
           "& .MuiDrawer-paper": {
             top: "48px",
-            backgroundColor: "#1f2937",
+            backgroundColor: "#064e3b",
             color: "white",
             fontSize: "0.875rem",
           },
@@ -149,7 +153,7 @@ export default function Menu4() {
                           >
                             <ListItemButton onClick={() => setMenuOpen(false)}>
                               <ListItemIcon>
-                                <DocumentIcon className="h-5 w-5 text-gray-400" />
+                                <DocumentIcon className="h-5 w-5 text-green-400" />
                               </ListItemIcon>
                               <ListItemText
                                 primary={sub.nombre}

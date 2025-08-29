@@ -12,11 +12,13 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@heroicons/react": "^2.2.0",
     "@mui/material": "^7.3.1",
     "@tanstack/react-virtual": "^3.13.12",
     "file-saver": "^2.0.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
