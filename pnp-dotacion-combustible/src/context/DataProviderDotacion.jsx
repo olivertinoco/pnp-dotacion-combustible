@@ -1,0 +1,49 @@
+import { createContext, useContext, useState, useEffect } from "react";
+
+const DataContext = createContext();
+
+export const DataProviderDotacion = ({ children }) => {
+  const [data, setData] = useState({
+    listaDotacion: [],
+    listaVehiculo: [],
+    hlpTipoFuncion: [],
+    hlpTipoRegistro: [],
+    hlpTipoVehiculo: [],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const url = "/Home/TraerListaDotacionCombustible";
+        const response = await fetch(url);
+        const textData = await response.text();
+
+        if (textData === "error") {
+          console.error("Error en el servidor al obtener datos");
+          return;
+        }
+        const [
+          dotacionRaw,
+          vehiculoRaw,
+          tipoFuncionRaw,
+          tipoRegistroRaw,
+          tipoVehiculoRaw,
+        ] = textData.trim().split("^");
+        setData({
+          listaDotacion: dotacionRaw?.split("~") ?? [],
+          listaVehiculo: vehiculoRaw?.split("~") ?? [],
+          hlpTipoFuncion: tipoFuncionRaw?.split("~") ?? [],
+          hlpTipoRegistro: tipoRegistroRaw?.split("~") ?? [],
+          hlpTipoVehiculo: tipoVehiculoRaw?.split("~") ?? [],
+        });
+      } catch (err) {
+        console.error("Error al obtener datos:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  return <DataContext.Provider value={data}>{children}</DataContext.Provider>;
+};
+
+export const useData = () => useContext(DataContext);
