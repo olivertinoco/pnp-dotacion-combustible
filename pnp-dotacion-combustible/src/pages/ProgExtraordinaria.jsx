@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 
-export default function SubRQpersonal() {
+export default function ProgExtraordinaria() {
   const location = useLocation();
   const cabecera = location.state?.value;
 
