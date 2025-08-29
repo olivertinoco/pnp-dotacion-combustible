@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import BloqueDotacion from "./components/BloqueDotacion";
 import Login from "./components/Login";
 import Menu from "./components/Menu";
 import ProgDotacion from "./pages/ProgDotacion";
