@@ -5,7 +5,7 @@ import { useFiltradoSincronizado } from "../hooks/useFiltradoSincronizado";
 import { useTablaVirtualizada } from "../hooks/useTablaVirtualizada";
 import { useExportExcel } from "../hooks/useExportExcel";
 import { getTimestamp } from "../utils/getTimestamp";
-import { useData } from "../context/DataProvider";
+import { useData } from "../context/DataProviderDotacion";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 

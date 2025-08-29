@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useData } from "../context/DataProvider";
+import { useData } from "../context/DataProviderDotacion";
 
 const FiltrosGrilla = ({ visible = false, onBuscar }) => {
   const { hlpTipoFuncion, hlpTipoRegistro, hlpTipoVehiculo } = useData();
