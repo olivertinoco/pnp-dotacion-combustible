@@ -1,4 +1,5 @@
 import "../index.css";
+import "leaflet/dist/leaflet.css";
 import App from "../App";
 import { DataProvider } from "../context/DataProvider";
 
