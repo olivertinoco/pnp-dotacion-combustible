@@ -9,12 +9,67 @@ import {
   Popup,
 } from "react-leaflet";
 import mapasBase from "./MapasBase";
+import CapaDepartamentos from "./CapaDepartamentos";
 
 const { BaseLayer } = LayersControl;
 
 export default function MapaLeaflet() {
   const position = [-11.4384551, -76.7642199];
   const [panelOpen, setPanelOpen] = useState(false);
+
+  const url =
+    "https://giserver.proviasnac.gob.pe/arcgis/rest/services/PROVIAS/WEB_LimitesPoliticos/MapServer";
+  const urlPol =
+    "https://seguridadciudadana.mininter.gob.pe/arcgis/rest/services/servicios_ogc/policia_nacional_peru/MapServer";
+
+  const comisarias = {
+    url: `${urlPol}/5`,
+    capa: 0,
+    fillColor: "#007bff",
+    color: "#007bff",
+    weight: 2,
+    label: [
+      { text: "Comisaria", nombre: "comisaria" },
+      { text: "Region Policial", nombre: "regionpol" },
+      { text: "Division Policial", nombre: "divpol_divopus" },
+    ],
+  };
+
+  const departamento = {
+    url: `${url}/0`,
+    capa: 0,
+    fillColor: "#007bff",
+    color: "#007bff",
+    weight: 2,
+    label: [
+      { text: "Departamento", nombre: "NOMBRE" },
+      { text: "Capital", nombre: "CAPITAL" },
+    ],
+  };
+
+  const provincias = {
+    url: `${url}/1`,
+    capa: 1,
+    fillColor: "#ffffff",
+    color: "#008000",
+    weight: 1.5,
+    label: [
+      { text: "Provincia", nombre: "NOMBRE" },
+      { text: "Capital", nombre: "CAPITAL" },
+    ],
+  };
+
+  const distritos = {
+    url: `${url}/2`,
+    capa: 2,
+    fillColor: "#ffffff",
+    color: "#a52a2a",
+    weight: 1,
+    label: [
+      { text: "Distrito", nombre: "NOMBRE" },
+      { text: "Capital", nombre: "CAPITAL" },
+    ],
+  };
 
   return (
     <div className="flex h-screen w-full">
@@ -61,6 +116,10 @@ export default function MapaLeaflet() {
               );
             })}
           </LayersControl>
+          <CapaDepartamentos params={departamento} />
+          <CapaDepartamentos params={provincias} />
+          <CapaDepartamentos params={distritos} />
+          {/* <CapaDepartamentos params={comisarias} />*/}
         </MapContainer>
       </div>
     </div>
