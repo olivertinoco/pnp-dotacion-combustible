@@ -116,10 +116,7 @@ export default function MapaLeaflet() {
               );
             })}
           </LayersControl>
-          <CapaDepartamentos params={departamento} />
-          <CapaDepartamentos params={provincias} />
-          <CapaDepartamentos params={distritos} />
-          {/* <CapaDepartamentos params={comisarias} />*/}
+          <CapaDepartamentos params={departamento} codigo={"08"} />
         </MapContainer>
       </div>
     </div>
