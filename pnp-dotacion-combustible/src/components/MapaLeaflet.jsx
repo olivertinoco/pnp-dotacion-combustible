@@ -19,26 +19,7 @@ const { BaseLayer } = LayersControl;
 export default function MapaLeaflet() {
   const position = [-11.4384551, -76.7642199];
   const [panelOpen, setPanelOpen] = useState(false);
-  const { departamento } = useConstantsMapa();
-
-  const { data, loading, error, progress } = useStreamFetch(
-    "/Home/TraerListaGeometrias",
-  );
-
-  useEffect(() => {
-    if (data) {
-      console.log("🔍 data recibido:", data);
-    }
-  }, [data]);
-
-  let geoJsonData = null;
-  try {
-    if (data) {
-      geoJsonData = JSON.parse(data); // parse al terminar
-    }
-  } catch (err) {
-    console.error("Error parseando GeoJSON:", err);
-  }
+  const { departamentos, provincias, distritos } = useConstantsMapa();
 
   return (
     <div className="flex h-screen w-full">
@@ -86,27 +67,9 @@ export default function MapaLeaflet() {
             })}
           </LayersControl>
 
-          <CapaDepartamentos params={departamento} codigo={null} />
-
-          {loading && (
-            <div className="absolute top-2 left-2 bg-white p-2 rounded shadow">
-              Cargando {progress}%
-            </div>
-          )}
-          {error && (
-            <div className="absolute top-2 left-2 bg-red-200 text-red-800 p-2 rounded shadow">
-              Error: {error}
-            </div>
-          )}
-          {geoJsonData && (
-            <GeoJSON
-              data={geoJsonData}
-              style={() => ({
-                color: "red",
-                weight: 3,
-              })}
-            />
-          )}
+          <CapaDepartamentos params={departamentos} codigo={"99"} />
+          {/* <CapaDepartamentos params={provincias} codigo={"1202"} />*/}
+          {/* <CapaDepartamentos params={distritos} codigo={null} />*/}
         </MapContainer>
       </div>
     </div>
