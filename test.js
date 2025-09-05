@@ -10,15 +10,22 @@
 //   body: "data1=maria&data2=1234",
 // });
 
-const res = await fetch(
-  "http://localhost:5222/Home/TraerListaDotacionCombustible",
-  {
-    method: "GET",
-    headers: {
-      Accept: "text/plain",
-    },
+// const res = await fetch(
+//   "http://localhost:5222/Home/TraerListaDotacionCombustible",
+//   {
+//     method: "GET",
+//     headers: {
+//       Accept: "text/plain",
+//     },
+//   },
+// );
+
+const res = await fetch("http://localhost:5222/Home/TraerListaGeometrias", {
+  method: "GET",
+  headers: {
+    Accept: "text/plain",
   },
-);
+});
 
 console.log(await res.text());
 
