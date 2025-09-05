@@ -1,17 +1,29 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import { featureLayer } from "esri-leaflet";
+import { geoJSON } from "leaflet";
 
 export default function CapaDepartamentos({ params, codigo }) {
   const map = useMap();
+  const zoomRef = useRef(null);
 
   useEffect(() => {
     if (!params || !map) return;
-    const { url, fillColor, color, weight } = params;
+    const { url, fillColor, color, weight, datoField } = params;
+    const centroPeru = [-9.19, -75.0152];
+
+    if (codigo === null) {
+      map.setView(centroPeru, 6);
+      zoomRef.current = 6;
+      return;
+    }
+
+    let whereClause =
+      codigo !== "99" ? ` ${datoField} = '${codigo}'` : undefined;
 
     const capaServicio = featureLayer({
       url,
-      ...(codigo ? { where: `DPTO = '${codigo}'` } : {}),
+      ...(whereClause ? { where: whereClause } : {}),
       onEachFeature: function (feature, layer) {
         layer.on("click", (e) => {
           const { lat, lng } = e.latlng;
@@ -41,22 +53,33 @@ export default function CapaDepartamentos({ params, codigo }) {
 
     capaServicio.addTo(map);
 
-    if (codigo) {
-      capaServicio.once("load", () => {
-        let bounds = null;
+    const query = capaServicio.query();
+    if (whereClause) query.where(whereClause);
 
-        capaServicio.eachFeature((layer) => {
-          if (layer.getBounds) {
-            const b = layer.getBounds();
-            bounds = bounds ? bounds.extend(b) : b;
+    query.run((error, featureCollection) => {
+      if (!error && featureCollection.features.length) {
+        const geoJsonLayer = geoJSON(featureCollection);
+        const bounds = geoJsonLayer.getBounds();
+        if (bounds.isValid()) {
+          if (codigo === "99") {
+            map.setView(centroPeru, 6);
+            zoomRef.current = 6;
+          } else {
+            map.fitBounds(bounds);
+            let newZoom = map.getZoom();
+            if (!zoomRef.current) {
+              // primera vez: limitar zoom a 9
+              newZoom = newZoom > 9 ? 9 : newZoom;
+              zoomRef.current = newZoom;
+            } else {
+              // subsecuente: mantener el mismo zoom que la primera coincidencia
+              newZoom = zoomRef.current;
+            }
+            map.setView(bounds.getCenter(), newZoom);
           }
-        });
-
-        if (bounds && bounds.isValid()) {
-          map.fitBounds(bounds);
         }
-      });
-    }
+      }
+    });
 
     // limpiar al desmontar
     return () => {

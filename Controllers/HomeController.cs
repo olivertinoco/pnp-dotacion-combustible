@@ -27,7 +27,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "Cnx");
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
             rpta = odaSQL.ejecutarComando("dbo.usp_listaDotacionCombustible");
             return rpta;
         }
@@ -48,7 +48,7 @@ public class HomeController : Controller
             string clave = Request.Form["data2"].ToString();
             string usuario = $"{user}|{clave}";
 
-            daSQL odaSQL = new daSQL(_configuration, "Cnx");
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
             rpta = odaSQL.ejecutarComando("dbo.usp_loginXmenus", "@data", usuario);
             if (rpta == "")
             {
@@ -61,6 +61,23 @@ public class HomeController : Controller
         {
             _logger.LogError(ex, "Error en backend:");
             return "error";
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> TraerListaGeometrias()
+    {
+        try
+        {
+            Response.ContentType = "application/json";
+            var odaSQL = new daSQL(_configuration, "LOC");
+            await odaSQL.ejecutarComandoStreamAsync("dbo.usp_listaGeometrias", Response.Body);
+            return new EmptyResult(); // ya escribimos todo en Response.Body
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return StatusCode(500, "error");
         }
     }
 
