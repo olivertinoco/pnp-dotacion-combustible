@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PanelCard from "./PanelCard";
 import {
   MapContainer,
@@ -7,69 +7,38 @@ import {
   WMSTileLayer,
   Marker,
   Popup,
+  GeoJSON,
 } from "react-leaflet";
 import mapasBase from "./MapasBase";
 import CapaDepartamentos from "./CapaDepartamentos";
+import useConstantsMapa from "../hooks/useConstantsMapa";
+import { useStreamFetch } from "../hooks/useStreamFetch";
 
 const { BaseLayer } = LayersControl;
 
 export default function MapaLeaflet() {
   const position = [-11.4384551, -76.7642199];
   const [panelOpen, setPanelOpen] = useState(false);
+  const { departamento } = useConstantsMapa();
 
-  const url =
-    "https://giserver.proviasnac.gob.pe/arcgis/rest/services/PROVIAS/WEB_LimitesPoliticos/MapServer";
-  const urlPol =
-    "https://seguridadciudadana.mininter.gob.pe/arcgis/rest/services/servicios_ogc/policia_nacional_peru/MapServer";
+  const { data, loading, error, progress } = useStreamFetch(
+    "/Home/TraerListaGeometrias",
+  );
 
-  const comisarias = {
-    url: `${urlPol}/5`,
-    capa: 0,
-    fillColor: "#007bff",
-    color: "#007bff",
-    weight: 2,
-    label: [
-      { text: "Comisaria", nombre: "comisaria" },
-      { text: "Region Policial", nombre: "regionpol" },
-      { text: "Division Policial", nombre: "divpol_divopus" },
-    ],
-  };
+  useEffect(() => {
+    if (data) {
+      console.log("🔍 data recibido:", data);
+    }
+  }, [data]);
 
-  const departamento = {
-    url: `${url}/0`,
-    capa: 0,
-    fillColor: "#007bff",
-    color: "#007bff",
-    weight: 2,
-    label: [
-      { text: "Departamento", nombre: "NOMBRE" },
-      { text: "Capital", nombre: "CAPITAL" },
-    ],
-  };
-
-  const provincias = {
-    url: `${url}/1`,
-    capa: 1,
-    fillColor: "#ffffff",
-    color: "#008000",
-    weight: 1.5,
-    label: [
-      { text: "Provincia", nombre: "NOMBRE" },
-      { text: "Capital", nombre: "CAPITAL" },
-    ],
-  };
-
-  const distritos = {
-    url: `${url}/2`,
-    capa: 2,
-    fillColor: "#ffffff",
-    color: "#a52a2a",
-    weight: 1,
-    label: [
-      { text: "Distrito", nombre: "NOMBRE" },
-      { text: "Capital", nombre: "CAPITAL" },
-    ],
-  };
+  let geoJsonData = null;
+  try {
+    if (data) {
+      geoJsonData = JSON.parse(data); // parse al terminar
+    }
+  } catch (err) {
+    console.error("Error parseando GeoJSON:", err);
+  }
 
   return (
     <div className="flex h-screen w-full">
@@ -116,7 +85,28 @@ export default function MapaLeaflet() {
               );
             })}
           </LayersControl>
-          <CapaDepartamentos params={departamento} codigo={"08"} />
+
+          <CapaDepartamentos params={departamento} codigo={null} />
+
+          {loading && (
+            <div className="absolute top-2 left-2 bg-white p-2 rounded shadow">
+              Cargando {progress}%
+            </div>
+          )}
+          {error && (
+            <div className="absolute top-2 left-2 bg-red-200 text-red-800 p-2 rounded shadow">
+              Error: {error}
+            </div>
+          )}
+          {geoJsonData && (
+            <GeoJSON
+              data={geoJsonData}
+              style={() => ({
+                color: "red",
+                weight: 3,
+              })}
+            />
+          )}
         </MapContainer>
       </div>
     </div>
