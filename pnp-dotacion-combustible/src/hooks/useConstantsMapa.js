@@ -6,7 +6,7 @@ export default function useConstantsMapa() {
 
   const comisarias = {
     url: `${urlPol}/5`,
-    capa: 0,
+    tipo: "",
     fillColor: "#007bff",
     color: "#007bff",
     weight: 2,
@@ -18,9 +18,9 @@ export default function useConstantsMapa() {
     ],
   };
 
-  const departamento = {
+  const departamentos = {
     url: `${url}/0`,
-    capa: 0,
+    tipo: "dpto",
     fillColor: "#007bff",
     color: "#007bff",
     weight: 2,
@@ -33,7 +33,7 @@ export default function useConstantsMapa() {
 
   const provincias = {
     url: `${url}/1`,
-    capa: 1,
+    tipo: "prov",
     fillColor: "#ffffff",
     color: "#008000",
     weight: 1.5,
@@ -46,7 +46,7 @@ export default function useConstantsMapa() {
 
   const distritos = {
     url: `${url}/2`,
-    capa: 2,
+    tipo: "dist",
     fillColor: "#ffffff",
     color: "#a52a2a",
     weight: 1,
@@ -57,5 +57,5 @@ export default function useConstantsMapa() {
     ],
   };
 
-  return { comisarias, departamento, provincias, distritos };
+  return { comisarias, departamentos, provincias, distritos };
 }
