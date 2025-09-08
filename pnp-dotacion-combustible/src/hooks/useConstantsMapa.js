@@ -34,7 +34,7 @@ export default function useConstantsMapa() {
   const provincias = {
     url: `${url}/1`,
     tipo: "prov",
-    fillColor: "#ffffff",
+    fillColor: "#aa91b2",
     color: "#008000",
     weight: 1.5,
     datoField: "CODIGO",
@@ -47,7 +47,7 @@ export default function useConstantsMapa() {
   const distritos = {
     url: `${url}/2`,
     tipo: "dist",
-    fillColor: "#ffffff",
+    fillColor: "#ff7f50",
     color: "#a52a2a",
     weight: 1,
     datoField: "CODIGO",
