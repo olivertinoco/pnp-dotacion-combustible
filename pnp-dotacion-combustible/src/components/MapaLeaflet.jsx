@@ -67,9 +67,9 @@ export default function MapaLeaflet() {
             })}
           </LayersControl>
 
-          <CapaDepartamentos params={departamentos} codigo={"99"} />
-          {/* <CapaDepartamentos params={provincias} codigo={"1202"} />*/}
-          {/* <CapaDepartamentos params={distritos} codigo={null} />*/}
+          {/* <CapaDepartamentos params={departamentos} codigo={"21"} />*/}
+          <CapaDepartamentos params={provincias} codigo={"1506"} />
+          {/* <CapaDepartamentos params={distritos} codigo={"150103"} />*/}
         </MapContainer>
       </div>
     </div>
