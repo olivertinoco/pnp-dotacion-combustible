@@ -48,7 +48,7 @@ export default function useConstantsMapa() {
     url: `${url}/2`,
     tipo: "dist",
     fillColor: "#ff7f50",
-    color: "#a52a2a",
+    color: "#008000",
     weight: 1,
     datoField: "CODIGO",
     label: [
