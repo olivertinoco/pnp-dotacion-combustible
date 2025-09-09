@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
-import { featureLayer } from "esri-leaflet";
+import { featureLayer, query } from "esri-leaflet";
 import { geoJSON } from "leaflet";
 
 export default function CapaDepartamentos({ params, codigo }) {
@@ -8,9 +8,10 @@ export default function CapaDepartamentos({ params, codigo }) {
   const cacheRef = useRef(null); // guardamos el FeatureCollection completo
   const zoomRef = useRef(null);
 
-  // efecto 1: traer datos solo una vez
+  // efecto 1: traer datos solo una vez(departamentos/provincias)
   useEffect(() => {
     if (!params || !map) return;
+    if (params.tipo === "dist") return;
     if (cacheRef.current) return; // ya tenemos cache
 
     const { url } = params;
@@ -28,8 +29,24 @@ export default function CapaDepartamentos({ params, codigo }) {
   // efecto 2: filtrar localmente cuando cambia "codigo"
   useEffect(() => {
     if (!params || !map) return;
-    if (cacheRef.current) {
-      renderLocal(codigo, params, cacheRef.current);
+    if (params.tipo === "dist") {
+      // distritos: query directo al server
+      if (!codigo) {
+        renderLocal(null, params, null);
+        return;
+      }
+      const { url, datoField } = params;
+      const q = query({ url });
+      q.where(`${datoField} = '${codigo}'`).run((error, featureCollection) => {
+        if (!error) {
+          renderLocal(codigo, params, featureCollection);
+        }
+      });
+    } else {
+      // dpto/prov: cache local
+      if (cacheRef.current) {
+        renderLocal(codigo, params, cacheRef.current);
+      }
     }
   }, [codigo, params, map]);
 
@@ -51,15 +68,21 @@ export default function CapaDepartamentos({ params, codigo }) {
     }
 
     // filtro local
-    const filtered = {
-      ...featureCollection,
-      features:
-        codigo && codigo !== "99"
-          ? featureCollection.features.filter(
-              (f) => f.properties[datoField] === codigo,
-            )
-          : featureCollection.features,
-    };
+    const filtered =
+      tipo === "dist"
+        ? featureCollection
+        : {
+            ...featureCollection,
+            features:
+              codigo && codigo !== "99"
+                ? featureCollection.features.filter(
+                    (f) => f.properties[datoField] === codigo,
+                  )
+                : featureCollection.features,
+          };
+
+    if (!filtered || !filtered.features || filtered.features.length === 0)
+      return;
 
     const geoJsonLayer = geoJSON(filtered, {
       onEachFeature: (feature, layer) => {
