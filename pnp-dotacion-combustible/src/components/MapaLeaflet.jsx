@@ -69,22 +69,32 @@ export default function MapaLeaflet() {
   }, []);
 
   useEffect(() => {
-    setSelectedProv("");
-    setSelectedDist("");
-    setSelectedComisaria("");
+    if (selectedDpto) {
+      setSelectedProv("");
+      setSelectedDist("");
+      setSelectedComisaria("");
+    }
   }, [selectedDpto]);
 
   useEffect(() => {
-    setSelectedDist("");
-    setSelectedComisaria("");
+    if (selectedProv) {
+      setSelectedDist("");
+      setSelectedComisaria("");
+    }
   }, [selectedProv]);
 
   if (loading) return <div>Cargando datos...</div>;
   if (error) return <div>Error: {error.message}</div>;
   if (!data) return <div>No hay datos disponibles</div>;
 
-  // console.log("Dpto: ", selectedDpto, "Prov: ", selectedProv);
-  // console.log("Prov: ", selectedProv);
+  console.log(
+    "Dpto: ",
+    selectedDpto,
+    "Prov: ",
+    selectedProv,
+    "Dist: ",
+    selectedDist,
+  );
 
   return (
     <div className="relative h-screen w-full">
@@ -98,21 +108,11 @@ export default function MapaLeaflet() {
             setActivePanel={setActivePanel}
             data={panelData}
             onPanelSelectionChange={(sel) => {
-              if (sel.selectedDpto && sel.selectedDpto !== selectedDpto) {
-                setSelectedDpto(sel.selectedDpto);
-              }
-              if (sel.selectedProv && sel.selectedProv !== selectedProv) {
-                setSelectedProv(sel.selectedProv);
-              }
-              if (sel.selectedDist && sel.selectedDist !== selectedDist) {
-                setSelectedDist(sel.selectedDist);
-              }
-              if (
-                sel.selectedComisaria &&
-                sel.selectedComisaria !== selectedComisaria
-              ) {
+              if ("selectedDpto" in sel) setSelectedDpto(sel.selectedDpto);
+              if ("selectedProv" in sel) setSelectedProv(sel.selectedProv);
+              if ("selectedDist" in sel) setSelectedDist(sel.selectedDist);
+              if ("selectedComisaria" in sel)
                 setSelectedComisaria(sel.selectedComisaria);
-              }
             }}
           />
         )}

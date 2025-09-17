@@ -7,6 +7,7 @@ export default function CapaDepartamentos({ params, codigo }) {
   const map = useMap();
   const cacheRef = useRef(null); // guardamos el FeatureCollection completo
   const zoomRef = useRef(null);
+  const layerRef = useRef(null);
 
   // efecto 1: traer datos solo una vez(departamentos/provincias)
   useEffect(() => {
@@ -55,11 +56,10 @@ export default function CapaDepartamentos({ params, codigo }) {
     const centroPeru = [-9.19, -75.0152];
 
     // limpiar capas previas
-    map.eachLayer((layer) => {
-      if (layer.feature) {
-        map.removeLayer(layer);
-      }
-    });
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current);
+      layerRef.current = null;
+    }
 
     if (codigo === null) {
       map.setView(centroPeru, 6);
@@ -183,6 +183,8 @@ export default function CapaDepartamentos({ params, codigo }) {
       },
     }).addTo(map);
 
+    layerRef.current = geoJsonLayer;
+
     // ajuste de vista siempre que cambie el código
     const bounds = geoJsonLayer.getBounds();
     if (bounds.isValid()) {
@@ -199,8 +201,8 @@ export default function CapaDepartamentos({ params, codigo }) {
             break;
           case "dist":
           case "comi":
-            map.setZoom(12);
-            zoomRef.current = 12;
+            map.setZoom(15);
+            zoomRef.current = 15;
             break;
           case "dpto":
           default:

@@ -15,9 +15,14 @@ export default function PanelIzquierdoMapa({
         width: panelOpen ? "25rem" : "4rem",
         pointerEvents: panelOpen ? "auto" : "none",
       }}
-      onMouseLeave={() => setPanelOpen(false)}
     >
       <div className={`flex-1 space-y-4 p-4 ${!panelOpen ? "hidden" : ""}`}>
+        <button
+          onClick={() => setPanelOpen(false)}
+          className="bg-green-300 hover:bg-green-400 px-2 py-1 rounded text-sm mb-2"
+        >
+          Cerrar panel
+        </button>
         <PanelCard
           title="ruta partida"
           enabled={activePanel === 1}
