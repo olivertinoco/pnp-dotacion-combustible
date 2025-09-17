@@ -34,4 +34,19 @@
     td {
         font-weight: 200;
     }
+
+    /* --- Custom Leaflet LayersControl Toggle Icon --- */
+    .leaflet-control-layers-toggle::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2316a34a' viewBox='0 0 24 24'><path d='M3.75 4.5h16.5v3.75H3.75V4.5zM3.75 9.75h9.75v3.75H3.75V9.75zM3.75 15h16.5v4.5H3.75V15z'/></svg>")
+            no-repeat center center;
+        background-size: contain;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
 }

@@ -33,9 +33,15 @@ const Login = () => {
     <div className="min-h-screen flex">
       {/* Columna izquierda - Imagen */}
       <div
-        className="hidden md:flex w-2/3 bg-cover bg-center"
+        className="relative hidden md:flex w-2/3 bg-cover bg-center"
         style={{ backgroundImage: "url('/images/backgroundPNP.png')" }}
-      ></div>
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <h1 className="text-4xl font-bold text-white drop-shadow-lg text-center">
+            DOTACION DE COMBUSTIBLE
+          </h1>
+        </div>
+      </div>
 
       {/* Columna derecha */}
       <div className="flex w-full md:w-1/3 justify-center items-center  bg-gray-50">

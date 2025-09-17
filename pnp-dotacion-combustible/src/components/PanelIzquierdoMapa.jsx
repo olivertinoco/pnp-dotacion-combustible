@@ -1,0 +1,46 @@
+import PanelCard from "./PanelCard";
+
+export default function PanelIzquierdoMapa({
+  panelOpen,
+  setPanelOpen,
+  activePanel,
+  setActivePanel,
+  data,
+  onPanelSelectionChange,
+}) {
+  return (
+    <div
+      className={`absolute top-0 left-0 h-full z-[2000] flex flex-col transition-all duration-300`}
+      style={{
+        width: panelOpen ? "25rem" : "4rem",
+        pointerEvents: panelOpen ? "auto" : "none",
+      }}
+      onMouseLeave={() => setPanelOpen(false)}
+    >
+      <div className={`flex-1 space-y-4 p-4 ${!panelOpen ? "hidden" : ""}`}>
+        <PanelCard
+          title="ruta partida"
+          enabled={activePanel === 1}
+          onToggle={() => setActivePanel(activePanel === 1 ? null : 1)}
+          data={data}
+          onSelectionChange={(seleccion) => {
+            if (activePanel === 1 && onPanelSelectionChange) {
+              onPanelSelectionChange({ panel: 1, ...seleccion });
+            }
+          }}
+        />
+        <PanelCard
+          title="ruta llegada"
+          enabled={activePanel === 2}
+          onToggle={() => setActivePanel(activePanel === 2 ? null : 2)}
+          data={data}
+          onSelectionChange={(seleccion) => {
+            if (activePanel === 2 && onPanelSelectionChange) {
+              onPanelSelectionChange({ panel: 2, ...seleccion });
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+}
