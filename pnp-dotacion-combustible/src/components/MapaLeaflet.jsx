@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import PanelCard from "./PanelCard";
 import {
   MapContainer,
@@ -12,38 +12,114 @@ import {
 import mapasBase from "./MapasBase";
 import CapaDepartamentos from "./CapaDepartamentos";
 import useConstantsMapa from "../hooks/useConstantsMapa";
-import { useStreamFetch } from "../hooks/useStreamFetch";
+import PanelIzquierdoMapa from "./PanelIzquierdoMapa";
+import useFetch from "../hooks/useFetch";
+import CustomButtonControl from "./CustomButtonControl";
+import { Squares2X2Icon } from "@heroicons/react/24/solid";
 
 const { BaseLayer } = LayersControl;
 
 export default function MapaLeaflet() {
   const position = [-11.4384551, -76.7642199];
   const [panelOpen, setPanelOpen] = useState(false);
-  const { departamentos, provincias, distritos } = useConstantsMapa();
+  const [activePanel, setActivePanel] = useState(null);
+  const [panelData, setPanelData] = useState(null);
+
+  const [selectedDpto, setSelectedDpto] = useState("99");
+  const [selectedProv, setSelectedProv] = useState("");
+  const [selectedDist, setSelectedDist] = useState("");
+  const [selectedComisaria, setSelectedComisaria] = useState("");
+
+  const { departamentos, provincias, distritos, comisarias } =
+    useConstantsMapa();
+
+  const { data, loading, error } = useFetch("/Home/TraerListaGeometrias");
+
+  useEffect(() => {
+    if (data && data[0] && !panelData) {
+      // console.log("ubigeos:", data[0]);
+      setPanelData(data[0]);
+    }
+  }, [data, setPanelData]);
+
+  useEffect(() => {
+    const zoomControls = document.querySelectorAll(".leaflet-control-zoom");
+    zoomControls.forEach((ctrl) => {
+      ctrl.style.display = panelOpen ? "none" : "block";
+    });
+  }, [panelOpen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const toggleBtn = document.querySelector(
+        ".leaflet-control-layers-toggle",
+      );
+      if (toggleBtn) {
+        toggleBtn.style.backgroundImage = "none";
+        toggleBtn.style.display = "flex";
+        toggleBtn.style.alignItems = "center";
+        toggleBtn.style.justifyContent = "center";
+        toggleBtn.style.padding = "0";
+        toggleBtn.style.width = "30px";
+        toggleBtn.style.height = "30px";
+        toggleBtn.style.position = "relative"; // necesario para el ::after
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    setSelectedProv("");
+    setSelectedDist("");
+    setSelectedComisaria("");
+  }, [selectedDpto]);
+
+  useEffect(() => {
+    setSelectedDist("");
+    setSelectedComisaria("");
+  }, [selectedProv]);
+
+  if (loading) return <div>Cargando datos...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!data) return <div>No hay datos disponibles</div>;
+
+  // console.log("Dpto: ", selectedDpto, "Prov: ", selectedProv);
+  // console.log("Prov: ", selectedProv);
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="relative h-screen w-full">
       {/* Panel izquierdo */}
-      <div
-        className={`transition-all duration-300 ease-in-out bg-gray-100 shadow p-4`}
-        style={{
-          width: panelOpen ? "25rem" : "4rem", // ancho panel expandido vs colapsado
-        }}
-        onMouseEnter={() => setPanelOpen(true)}
-        onMouseLeave={() => setPanelOpen(false)}
-      >
-        <div className="flex flex-col space-y-4">
-          {panelOpen && (
-            <div className="space-y-4">
-              <PanelCard title="ruta partida" />
-              <PanelCard title="ruta llegada" />
-            </div>
-          )}
-        </div>
+      <div className="absolute top-0 left-0 h-full z-[2000]">
+        {panelData && (
+          <PanelIzquierdoMapa
+            panelOpen={panelOpen}
+            setPanelOpen={setPanelOpen}
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            data={panelData}
+            onPanelSelectionChange={(sel) => {
+              if (sel.selectedDpto && sel.selectedDpto !== selectedDpto) {
+                setSelectedDpto(sel.selectedDpto);
+              }
+              if (sel.selectedProv && sel.selectedProv !== selectedProv) {
+                setSelectedProv(sel.selectedProv);
+              }
+              if (sel.selectedDist && sel.selectedDist !== selectedDist) {
+                setSelectedDist(sel.selectedDist);
+              }
+              if (
+                sel.selectedComisaria &&
+                sel.selectedComisaria !== selectedComisaria
+              ) {
+                setSelectedComisaria(sel.selectedComisaria);
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Mapa */}
-      <div className="flex-1 transition-all duration-300 ease-in-out">
+      <div className="h-full w-full">
         <MapContainer
           center={position}
           zoom={5.75}
@@ -67,9 +143,23 @@ export default function MapaLeaflet() {
             })}
           </LayersControl>
 
-          {/* <CapaDepartamentos params={departamentos} codigo={"21"} />*/}
-          {/* <CapaDepartamentos params={provincias} codigo={"1506"} />*/}
-          <CapaDepartamentos params={distritos} codigo={"170201"} />
+          {selectedDpto && (
+            <CapaDepartamentos params={departamentos} codigo={selectedDpto} />
+          )}
+          {selectedProv && (
+            <CapaDepartamentos params={provincias} codigo={selectedProv} />
+          )}
+          {selectedDist && (
+            <CapaDepartamentos params={distritos} codigo={selectedDist} />
+          )}
+          {selectedComisaria && (
+            <CapaDepartamentos params={comisarias} codigo={selectedComisaria} />
+          )}
+
+          <CustomButtonControl
+            panelOpen={panelOpen}
+            setPanelOpen={setPanelOpen}
+          />
         </MapContainer>
       </div>
     </div>

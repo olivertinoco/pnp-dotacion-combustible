@@ -6,11 +6,11 @@ export default function useConstantsMapa() {
 
   const comisarias = {
     url: `${urlPol}/5`,
-    tipo: "",
+    tipo: "comi",
     fillColor: "#007bff",
     color: "#007bff",
     weight: 2,
-    datoField: "",
+    datoField: "id_dist",
     label: [
       { text: "Comisaria", nombre: "comisaria" },
       { text: "Region Policial", nombre: "regionpol" },
@@ -47,8 +47,8 @@ export default function useConstantsMapa() {
   const distritos = {
     url: `${url}/2`,
     tipo: "dist",
-    fillColor: "#ff7f50",
-    color: "#008000",
+    fillColor: "#0080af",
+    color: "#ff0000",
     weight: 1,
     datoField: "CODIGO",
     label: [

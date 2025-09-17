@@ -64,8 +64,25 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet("/Home/TraerListaGeometrias")]
+    public string TraerListaGeometrias()
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "LOC");
+            rpta = odaSQL.ejecutarComando("dbo.usp_listaGeometrias");
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
     [HttpGet]
-    public async Task<IActionResult> TraerListaGeometrias()
+    public async Task<IActionResult> TraerListaGeometriasAsync()
     {
         try
         {
