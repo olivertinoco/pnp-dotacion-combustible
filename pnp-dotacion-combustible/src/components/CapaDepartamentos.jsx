@@ -1,13 +1,59 @@
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import { featureLayer, query } from "esri-leaflet";
-import { geoJSON, marker, circle, divIcon } from "leaflet";
+import {
+  geoJSON,
+  marker,
+  circle,
+  divIcon,
+  DomEvent,
+  layerGroup,
+} from "leaflet";
+import { MapPinIcon } from "@heroicons/react/24/solid";
+import { renderToString } from "react-dom/server";
 
-export default function CapaDepartamentos({ params, codigo }) {
+export default function CapaDepartamentos({
+  params,
+  codigo,
+  borrarPuntos,
+  setBorrarPuntos,
+}) {
   const map = useMap();
   const cacheRef = useRef(null); // guardamos el FeatureCollection completo
   const zoomRef = useRef(null);
   const layerRef = useRef(null);
+  const markerRefs = useRef({ allMarkers: [] });
+  const markersLayer = useRef(null);
+
+  const heroIconMarker = divIcon({
+    className: "",
+    html: renderToString(
+      <MapPinIcon className="w-8 h-8 text-red-600 drop-shadow-lg" />,
+    ),
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
+
+  const clearLayer = () => {
+    if (layerRef.current) {
+      map.removeLayer(layerRef.current);
+      layerRef.current = null;
+    }
+  };
+
+  const removeAllMarkers = () => {
+    if (markersLayer.current) {
+      markersLayer.current.clearLayers();
+    }
+    markerRefs.current.allMarkers = [];
+  };
+
+  useEffect(() => {
+    if (map && !markersLayer.current) {
+      markersLayer.current = layerGroup().addTo(map);
+    }
+  }, [map]);
 
   // efecto 1: traer datos solo una vez(departamentos/provincias)
   useEffect(() => {
@@ -31,9 +77,10 @@ export default function CapaDepartamentos({ params, codigo }) {
   useEffect(() => {
     if (!params || !map) return;
     if (params.tipo === "dist" || params.tipo === "comi") {
-      // distritos: query directo al server
       if (!codigo) {
-        renderLocal(null, params, null);
+        // renderLocal(null, params, null);
+        clearLayer();
+        removeAllMarkers();
         return;
       }
       const { url, datoField } = params;
@@ -49,21 +96,30 @@ export default function CapaDepartamentos({ params, codigo }) {
         renderLocal(codigo, params, cacheRef.current);
       }
     }
+
+    return () => {
+      clearLayer();
+    };
   }, [codigo, params, map]);
+
+  // efecto 3: eliminar todos los markers si borrarPuntos es true
+  useEffect(() => {
+    if (borrarPuntos) {
+      removeAllMarkers();
+      setBorrarPuntos(false);
+    }
+  }, [borrarPuntos, map, setBorrarPuntos]);
 
   function renderLocal(codigo, params, featureCollection) {
     const { fillColor, color, weight, datoField, tipo } = params;
     const centroPeru = [-9.19, -75.0152];
 
-    // limpiar capas previas
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current);
-      layerRef.current = null;
-    }
+    clearLayer();
 
-    if (codigo === null) {
+    if (!codigo) {
       map.setView(centroPeru, 6);
       zoomRef.current = 6;
+      removeAllMarkers();
       return;
     }
 
@@ -92,9 +148,7 @@ export default function CapaDepartamentos({ params, codigo }) {
 
     const geoJsonLayer = geoJSON(filtered, {
       pointToLayer: (feature, latlng) => {
-        if (feature.geometry?.type !== "Point") {
-          return null;
-        }
+        if (feature.geometry?.type !== "Point") return null;
         if (!latlng || isNaN(latlng.lat) || isNaN(latlng.lng)) {
           console.warn("Coordenadas inválidas en feature", feature);
           return;
@@ -148,12 +202,30 @@ export default function CapaDepartamentos({ params, codigo }) {
             fillColor: color,
             fillOpacity: 0.25,
             bubblingMouseEvents: false,
-          }).on("click", (e) => {
-            console.log("Círculo clickeado", feature);
-          });
+          })
+            .on("click", () => {
+              console.log("Círculo clickeado", feature);
+            })
+            .on("dblclick", (e) => {
+              DomEvent.stopPropagation(e);
+            });
         }
       },
       onEachFeature: (feature, layer) => {
+        layer.on("dblclick", (e) => {
+          e.originalEvent.stopPropagation();
+          e.originalEvent.preventDefault();
+
+          const { lat, lng } = e.latlng;
+
+          const newMarker = marker([lat, lng], {
+            icon: heroIconMarker,
+          }).bindPopup(
+            `Marcador<br/>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`,
+          );
+          markersLayer.current.addLayer(newMarker);
+          markerRefs.current.allMarkers.push(newMarker);
+        });
         layer.on("click", (e) => {
           const { lat, lng } = e.latlng;
           console.log("coordenada click:", lat, lng, " zoom: ", map.getZoom());
@@ -172,10 +244,10 @@ export default function CapaDepartamentos({ params, codigo }) {
       style: (feature) => {
         if (feature.geometry?.type !== "Point") {
           return {
-            fillColor: feature.properties?.fillColor || fillColor,
+            // fillColor: feature.properties?.fillColor || fillColor,
             color: feature.properties?.color || color,
             weight: feature.properties?.weight || weight,
-            opacity: 1,
+            opacity: 0,
             fillOpacity: 0.2,
             dashArray: "4,4",
           };

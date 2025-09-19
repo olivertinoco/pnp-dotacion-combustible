@@ -21,7 +21,8 @@ export default function useConstantsMapa() {
   const departamentos = {
     url: `${url}/0`,
     tipo: "dpto",
-    fillColor: "#007bff",
+    // fillColor: "#007bff",
+    fillOpacity: 0,
     color: "#007bff",
     weight: 2,
     datoField: "DPTO",
@@ -34,7 +35,8 @@ export default function useConstantsMapa() {
   const provincias = {
     url: `${url}/1`,
     tipo: "prov",
-    fillColor: "#aa91b2",
+    // fillColor: "#aa91b2",
+    fillOpacity: 0,
     color: "#008000",
     weight: 1.5,
     datoField: "CODIGO",
@@ -47,7 +49,8 @@ export default function useConstantsMapa() {
   const distritos = {
     url: `${url}/2`,
     tipo: "dist",
-    fillColor: "#0080af",
+    // fillColor: "#0080af",
+    fillOpacity: 0,
     color: "#ff0000",
     weight: 1,
     datoField: "CODIGO",
