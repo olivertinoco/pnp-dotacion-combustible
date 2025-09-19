@@ -8,6 +8,7 @@ import {
   Marker,
   Popup,
   GeoJSON,
+  useMap,
 } from "react-leaflet";
 import mapasBase from "./MapasBase";
 import CapaDepartamentos from "./CapaDepartamentos";
@@ -15,11 +16,21 @@ import useConstantsMapa from "../hooks/useConstantsMapa";
 import PanelIzquierdoMapa from "./PanelIzquierdoMapa";
 import useFetch from "../hooks/useFetch";
 import CustomButtonControl from "./CustomButtonControl";
-import { Squares2X2Icon } from "@heroicons/react/24/solid";
+import CapaGeometrias from "./CapaGeometrias";
 
-const { BaseLayer } = LayersControl;
+function DisableDoubleClickZoom() {
+  const map = useMap();
+  useEffect(() => {
+    map.doubleClickZoom.disable();
+    return () => {
+      map.doubleClickZoom.enable();
+    };
+  }, [map]);
+  return null;
+}
 
 export default function MapaLeaflet() {
+  const { BaseLayer } = LayersControl;
   const position = [-11.4384551, -76.7642199];
   const [panelOpen, setPanelOpen] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
@@ -29,15 +40,19 @@ export default function MapaLeaflet() {
   const [selectedProv, setSelectedProv] = useState("");
   const [selectedDist, setSelectedDist] = useState("");
   const [selectedComisaria, setSelectedComisaria] = useState("");
+  const [borrarPuntos, setBorrarPuntos] = useState(false);
 
   const { departamentos, provincias, distritos, comisarias } =
     useConstantsMapa();
 
   const { data, loading, error } = useFetch("/Home/TraerListaGeometrias");
 
+  const onBorrarPuntos = () => {
+    setBorrarPuntos(true);
+  };
+
   useEffect(() => {
     if (data && data[0] && !panelData) {
-      // console.log("ubigeos:", data[0]);
       setPanelData(data[0]);
     }
   }, [data, setPanelData]);
@@ -96,6 +111,8 @@ export default function MapaLeaflet() {
     selectedDist,
   );
 
+  console.log("borrar puntos: ", borrarPuntos);
+
   return (
     <div className="relative h-screen w-full">
       {/* Panel izquierdo */}
@@ -114,6 +131,7 @@ export default function MapaLeaflet() {
               if ("selectedComisaria" in sel)
                 setSelectedComisaria(sel.selectedComisaria);
             }}
+            onBorrarPuntos={onBorrarPuntos}
           />
         )}
       </div>
@@ -127,6 +145,7 @@ export default function MapaLeaflet() {
           preferCanvas={true}
           attributionControl={true}
           style={{ height: "100%", width: "100%" }}
+          doubleClickZoom={false}
         >
           <LayersControl position="topright">
             {Object.entries(mapasBase).map(([nombre, cfg], i) => {
@@ -142,18 +161,40 @@ export default function MapaLeaflet() {
               );
             })}
           </LayersControl>
+          <DisableDoubleClickZoom />
+          <CapaGeometrias geoJsonStringify={data[1].split("~")} />
 
           {selectedDpto && (
-            <CapaDepartamentos params={departamentos} codigo={selectedDpto} />
+            <CapaDepartamentos
+              params={departamentos}
+              codigo={selectedDpto}
+              borrarPuntos={borrarPuntos}
+              setBorrarPuntos={setBorrarPuntos}
+            />
           )}
           {selectedProv && (
-            <CapaDepartamentos params={provincias} codigo={selectedProv} />
+            <CapaDepartamentos
+              params={provincias}
+              codigo={selectedProv}
+              borrarPuntos={borrarPuntos}
+              setBorrarPuntos={setBorrarPuntos}
+            />
           )}
           {selectedDist && (
-            <CapaDepartamentos params={distritos} codigo={selectedDist} />
+            <CapaDepartamentos
+              params={distritos}
+              codigo={selectedDist}
+              borrarPuntos={borrarPuntos}
+              setBorrarPuntos={setBorrarPuntos}
+            />
           )}
           {selectedComisaria && (
-            <CapaDepartamentos params={comisarias} codigo={selectedComisaria} />
+            <CapaDepartamentos
+              params={comisarias}
+              codigo={selectedComisaria}
+              borrarPuntos={borrarPuntos}
+              setBorrarPuntos={setBorrarPuntos}
+            />
           )}
 
           <CustomButtonControl

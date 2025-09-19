@@ -1,3 +1,4 @@
+/*eslint-disable*/
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
 import { featureLayer } from "esri-leaflet";

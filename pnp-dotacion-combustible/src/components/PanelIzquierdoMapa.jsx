@@ -7,6 +7,7 @@ export default function PanelIzquierdoMapa({
   setActivePanel,
   data,
   onPanelSelectionChange,
+  onBorrarPuntos,
 }) {
   return (
     <div
@@ -17,12 +18,22 @@ export default function PanelIzquierdoMapa({
       }}
     >
       <div className={`flex-1 space-y-4 p-4 ${!panelOpen ? "hidden" : ""}`}>
-        <button
-          onClick={() => setPanelOpen(false)}
-          className="bg-green-300 hover:bg-green-400 px-2 py-1 rounded text-sm mb-2"
-        >
-          Cerrar panel
-        </button>
+        <div className="flex gap-2 mb-2">
+          <button
+            onClick={() => setPanelOpen(false)}
+            className="bg-green-300 hover:bg-green-400 px-2 py-1 rounded text-sm"
+          >
+            Cerrar panel
+          </button>
+          <button
+            onClick={() => {
+              if (onBorrarPuntos) onBorrarPuntos();
+            }}
+            className="bg-blue-300 hover:bg-blue-400 px-2 py-1 rounded text-sm"
+          >
+            Borrar puntos
+          </button>
+        </div>
         <PanelCard
           title="ruta partida"
           enabled={activePanel === 1}
