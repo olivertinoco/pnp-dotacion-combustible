@@ -1,35 +1,33 @@
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
-import { layerGroup, geoJSON } from "leaflet";
+import { geoJSON, circle, marker, divIcon } from "leaflet";
+import { MapPinIcon } from "@heroicons/react/24/solid";
+import { renderToString } from "react-dom/server";
+
+const heroIconMarker = divIcon({
+  className: "",
+  html: renderToString(
+    <MapPinIcon className="w-8 h-8 text-red-600 drop-shadow-lg" />,
+  ),
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+});
 
 export default function CapaGeometrias({ geoJsonStringify }) {
   const map = useMap();
 
   useEffect(() => {
     if (!geoJsonStringify || geoJsonStringify.length < 2) return;
-
-    const [color, grosor] = geoJsonStringify[0].split("|");
-
-    // Grupo contenedor
-    const group = layerGroup();
+    const [color, grosor, tipo] = geoJsonStringify[0].split("|");
 
     // Iterar desde el índice 1 en adelante
-    geoJsonStringify.slice(1).forEach((geoStr, idx) => {
+    const layers = geoJsonStringify.slice(1).map((geoStr) => {
       try {
-        const [idStr, jsonStr] = geoStr.split("|");
-        if (!jsonStr) return;
+        const [_, jsonStr] = geoStr.split("|");
+        if (!jsonStr) return null;
 
         const geoObj = JSON.parse(jsonStr);
-
-        if (geoObj?.features) {
-          geoObj.features = geoObj.features.map((f) => ({
-            ...f,
-            properties: {
-              ...f.properties,
-              id: idStr,
-            },
-          }));
-        }
 
         const geoLayer = geoJSON(geoObj, {
           style: {
@@ -37,28 +35,33 @@ export default function CapaGeometrias({ geoJsonStringify }) {
             weight: grosor,
             fillOpacity: 0.1,
           },
-          onEachFeature: (feature, layer) => {
-            const { id, NOMBRE } = feature.properties || {};
-            layer.bindPopup(
-              NOMBRE
-                ? `Nombre: ${NOMBRE}<br/>ID: ${id}`
-                : `Feature ${idx + 1}<br/>ID: ${id}`,
-            );
+          pointToLayer: (feature, latlng) => {
+            if (tipo === undefined) return null;
+            if (tipo === "1") {
+              return circle(latlng, {
+                radius: 80,
+                color: color,
+                opacity: 0.75,
+                weight: grosor,
+                fillColor: color,
+                fillOpacity: 0.25,
+                bubblingMouseEvents: false,
+              });
+            } else {
+              return marker(latlng, { icon: heroIconMarker });
+            }
           },
         });
 
-        group.addLayer(geoLayer);
-      } catch (err) {
-        console.error("Error al parsear geojson:", geoStr, err);
+        geoLayer.addTo(map);
+        return geoLayer;
+      } catch {
+        return null;
       }
     });
 
-    // Añadimos el grupo al mapa
-    group.addTo(map);
-
-    // Limpiamos cuando cambie la dependencia o se desmonte
     return () => {
-      map.removeLayer(group);
+      layers.forEach((l) => l && map.removeLayer(l));
     };
   }, [geoJsonStringify, map]);
 

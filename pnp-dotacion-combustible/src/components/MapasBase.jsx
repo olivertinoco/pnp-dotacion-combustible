@@ -1,4 +1,9 @@
 const mapasBase = {
+  "Google Hybrid (ArcGIS Canvas)": {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    options: { maxZoom: 18, attribution: "Esri / ArcGIS" },
+  },
+
   "Google Streets": {
     url: "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
     options: {
@@ -6,11 +11,6 @@ const mapasBase = {
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
       attribution: "Google",
     },
-  },
-
-  "Google Hybrid (ArcGIS Canvas)": {
-    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-    options: { maxZoom: 18, attribution: "Esri / ArcGIS" },
   },
 
   "Google Satellite": {
@@ -38,7 +38,6 @@ const mapasBase = {
 
   "OSM WMS (Mundialis)": {
     url: "https://ows.mundialis.de/services/service?",
-    // marcamos type:'wms' para renderizar con WMSTileLayer
     options: {
       layers: "OSM-WMS",
       format: "image/png",

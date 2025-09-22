@@ -4,7 +4,7 @@ import { useMap } from "react-leaflet";
 import { featureLayer } from "esri-leaflet";
 import { marker, circle, divIcon } from "leaflet";
 
-export default function CapaDepartamentos({ params }) {
+export default function CapaPoints({ params }) {
   const map = useMap();
 
   useEffect(() => {

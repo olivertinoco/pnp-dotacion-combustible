@@ -54,6 +54,7 @@ export default function MapaLeaflet() {
   useEffect(() => {
     if (data && data[0] && !panelData) {
       setPanelData(data[0]);
+      // debugger;
     }
   }, [data, setPanelData]);
 
@@ -102,16 +103,16 @@ export default function MapaLeaflet() {
   if (error) return <div>Error: {error.message}</div>;
   if (!data) return <div>No hay datos disponibles</div>;
 
-  console.log(
-    "Dpto: ",
-    selectedDpto,
-    "Prov: ",
-    selectedProv,
-    "Dist: ",
-    selectedDist,
-  );
+  // console.log(
+  //   "Dpto: ",
+  //   selectedDpto,
+  //   "Prov: ",
+  //   selectedProv,
+  //   "Dist: ",
+  //   selectedDist,
+  // );
 
-  console.log("borrar puntos: ", borrarPuntos);
+  // console.log("borrar puntos: ", borrarPuntos);
 
   return (
     <div className="relative h-screen w-full">
@@ -162,7 +163,9 @@ export default function MapaLeaflet() {
             })}
           </LayersControl>
           <DisableDoubleClickZoom />
-          <CapaGeometrias geoJsonStringify={data[1].split("~")} />
+          {data.slice(1).map((geo, idx) => (
+            <CapaGeometrias key={idx} geoJsonStringify={geo.split("~")} />
+          ))}
 
           {selectedDpto && (
             <CapaDepartamentos
