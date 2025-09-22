@@ -38,6 +38,7 @@ export default defineConfig(({ command }) => {
             : "assets/[name].[hash].[ext]",
         },
       },
+      sourcemap: true,
     },
     server: {
       port: 5101,
