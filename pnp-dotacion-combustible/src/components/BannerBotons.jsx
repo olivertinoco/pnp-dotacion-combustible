@@ -12,6 +12,18 @@ const BannerBotons = ({ bannerConfig }) => {
       <div className="flex gap-2">
         <button
           className={`px-4 py-2 rounded ${
+            activeTab === "operativo" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => {
+            switchTab("operativo");
+            setMostrarFiltros(false);
+            setFiltrosAplicados(null);
+          }}
+        >
+          Programacion Operatividad
+        </button>
+        <button
+          className={`px-4 py-2 rounded ${
             activeTab === "vehiculo" ? "bg-blue-500 text-white" : "bg-gray-200"
           }`}
           onClick={() => switchTab("vehiculo")}
@@ -28,30 +40,32 @@ const BannerBotons = ({ bannerConfig }) => {
         </button>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          className={`px-4 py-2 rounded bg-blue-500 text-white`}
-          onClick={() => {
-            setMostrarFiltros((prev) => {
-              const nuevoValor = !prev;
-              if (nuevoValor) {
-                setFiltrosAplicados(null);
-              }
-              return nuevoValor;
-            });
-          }}
-        >
-          {mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros"}
-        </button>
-        <button
-          className="px-4 py-2 rounded bg-blue-500 text-white"
-          onClick={() => setExportExcel(true)}
-        >
-          {activeTab === "dotacion"
-            ? "Exp. Excel Dotación"
-            : "Exp. Excel Vehículo"}
-        </button>
-      </div>
+      {activeTab !== "operativo" && (
+        <div className="flex gap-2">
+          <button
+            className={`px-4 py-2 rounded bg-blue-500 text-white`}
+            onClick={() => {
+              setMostrarFiltros((prev) => {
+                const nuevoValor = !prev;
+                if (nuevoValor) {
+                  setFiltrosAplicados(null);
+                }
+                return nuevoValor;
+              });
+            }}
+          >
+            {mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros"}
+          </button>
+          <button
+            className="px-4 py-2 rounded bg-blue-500 text-white"
+            onClick={() => setExportExcel(true)}
+          >
+            {activeTab === "dotacion"
+              ? "Exp. Excel Dotación"
+              : "Exp. Excel Vehículo"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

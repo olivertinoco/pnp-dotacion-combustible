@@ -38,6 +38,22 @@ public class HomeController : Controller
         }
     }
 
+    public string TraerListaOperatividadVeh()
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_listaOperatividadVehiculo");
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
     [HttpPost]
     public string TraerListaMenus()
     {

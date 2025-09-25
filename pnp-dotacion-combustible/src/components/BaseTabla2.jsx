@@ -1,26 +1,40 @@
-import { useState, useEffect } from "react";
-import Loader from "../components/Loader";
-import Popup from "../components/Popup";
-import { useFiltradoSincronizado } from "../hooks/useFiltradoSincronizado";
-import { useTablaVirtualizada } from "../hooks/useTablaVirtualizada";
-import { useExportExcel } from "../hooks/useExportExcel";
+import { useState, useEffect, useMemo } from "react";
+import { Loader, Popup } from "../components";
+import {
+  useFiltradoSincronizado,
+  useTablaVirtualizada,
+  useExportExcel,
+} from "../hooks";
 import { getTimestamp } from "../utils/getTimestamp";
-import { useData } from "../context/DataProviderDotacion";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import { useData } from "../context/DataProviderDotacion";
 
-export const BaseTabla = ({ configTable }) => {
+export const BaseTabla2 = ({ configTable }) => {
   const { tipo, title, buscar, exportExcel, setExportExcel, isPaginar } =
     configTable;
 
-  const { listaOperatividad } = useData();
-  const rowsOriginal = tipo === "operativo" ? listaOperatividad : "";
+  const { listaDotacion, listaVehiculo, listaOperatividad } = useData();
+  // const rowsOriginal = tipo === "operativo" ? listaOperatividad : "";
+
+  const rowsOriginal = useMemo(() => {
+    switch (tipo) {
+      case "dotacion":
+        return listaDotacion;
+      case "vehiculo":
+        return listaVehiculo;
+      case "operativo":
+        return listaOperatividad;
+      default:
+        return [];
+    }
+  }, [tipo, listaDotacion, listaVehiculo, listaOperatividad]);
 
   const rows = useFiltradoSincronizado(
     rowsOriginal,
     buscar,
     tipo,
-    listaOperatividad,
+    tipo === "operativo" ? listaOperatividad : listaVehiculo,
   );
 
   const dataRows = rows && rows.length > 2 ? rows.slice(2) : [];

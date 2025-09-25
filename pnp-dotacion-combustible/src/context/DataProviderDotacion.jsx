@@ -6,6 +6,7 @@ export const DataProviderDotacion = ({ children }) => {
   const [data, setData] = useState({
     listaDotacion: [],
     listaVehiculo: [],
+    listaOperatividad: [],
     hlpTipoFuncion: [],
     hlpTipoRegistro: [],
     hlpTipoVehiculo: [],
@@ -15,6 +16,7 @@ export const DataProviderDotacion = ({ children }) => {
     const fetchData = async () => {
       try {
         const url = "/Home/TraerListaDotacionCombustible";
+        // const url = "/Home/TraerListaOperatividadVeh";
         const response = await fetch(url);
         const textData = await response.text();
 
@@ -24,14 +26,17 @@ export const DataProviderDotacion = ({ children }) => {
         }
         const [
           dotacionRaw,
-          vehiculoRaw,
+          programaRaw,
+          operatividadRaw,
           tipoFuncionRaw,
           tipoRegistroRaw,
           tipoVehiculoRaw,
         ] = textData.trim().split("^");
+
         setData({
           listaDotacion: dotacionRaw?.split("~") ?? [],
-          listaVehiculo: vehiculoRaw?.split("~") ?? [],
+          listaVehiculo: programaRaw?.split("~") ?? [],
+          listaOperatividad: operatividadRaw?.split("~") ?? [],
           hlpTipoFuncion: tipoFuncionRaw?.split("~") ?? [],
           hlpTipoRegistro: tipoRegistroRaw?.split("~") ?? [],
           hlpTipoVehiculo: tipoVehiculoRaw?.split("~") ?? [],
