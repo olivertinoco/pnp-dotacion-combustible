@@ -4,7 +4,7 @@ import BloqueDotacion from "../components/BloqueDotacion";
 
 export default function ProgDotacion() {
   const location = useLocation();
-  const cabecera = location.state?.value;
+  const usuario = location.state?.value;
 
   return (
     <DataProviderDotacion>

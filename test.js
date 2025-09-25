@@ -20,12 +20,15 @@
 //   },
 // );
 
-const res = await fetch("http://localhost:5222/Home/TraerListaGeometrias", {
-  method: "GET",
-  headers: {
-    Accept: "text/plain",
+const res = await fetch(
+  "http://localhost:5222/Home/TraerListaOperatividadVeh",
+  {
+    method: "GET",
+    headers: {
+      Accept: "text/plain",
+    },
   },
-});
+);
 
 console.log(await res.text());
 

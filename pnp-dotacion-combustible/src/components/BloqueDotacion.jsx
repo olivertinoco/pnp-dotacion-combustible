@@ -1,11 +1,12 @@
 import { useState, useTransition } from "react";
 import { BaseTabla } from "./BaseTabla";
+import { BaseTabla2 } from "./BaseTabla2";
 import Loader from "./Loader";
 import FiltrosGrilla from "./FiltrosGrilla";
 import BannerBotons from "./BannerBotons";
 
 const BloqueDotacion = () => {
-  const [activeTab, setActiveTab] = useState("vehiculo");
+  const [activeTab, setActiveTab] = useState("operativo");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [filtrosAplicados, setFiltrosAplicados] = useState(null);
@@ -35,7 +36,9 @@ const BloqueDotacion = () => {
     title:
       activeTab === "vehiculo"
         ? "Tabla de Vehículos"
-        : "Tabla de Dotación de Combustible",
+        : activeTab === "dotacion"
+          ? "Tabla de Dotación de Combustible"
+          : "Tabla de Operatividad Vehicular",
     buscar: filtrosAplicados,
     exportExcel,
     setExportExcel,
@@ -44,11 +47,15 @@ const BloqueDotacion = () => {
 
   return (
     <div className="p-5 relative">
-      <FiltrosGrilla visible={mostrarFiltros} onBuscar={manejarBuscar} />
+      <FiltrosGrilla
+        visible={activeTab !== "operativo" && mostrarFiltros}
+        onBuscar={manejarBuscar}
+      />
       {isPending && <Loader />}
       <BannerBotons bannerConfig={bannerConfig} />
-      {activeTab === "vehiculo" && <BaseTabla configTable={configTable} />}
-      {activeTab === "dotacion" && <BaseTabla configTable={configTable} />}
+      {activeTab === "operativo" && <BaseTabla2 configTable={configTable} />}
+      {activeTab === "vehiculo" && <BaseTabla2 configTable={configTable} />}
+      {activeTab === "dotacion" && <BaseTabla2 configTable={configTable} />}
     </div>
   );
 };

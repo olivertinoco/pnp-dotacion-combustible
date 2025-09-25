@@ -31,7 +31,9 @@ export const useTablaVirtualizada = (rows, rowsOriginal, tipo, buscar) => {
   }, [rowsOriginal, titulo]);
 
   const cabeceraFiltrada = useMemo(() => {
-    return tipo === "dotacion" ? cabecera : cabecera.slice(3);
+    return tipo === "dotacion" || tipo === "operativo"
+      ? cabecera
+      : cabecera.slice(3);
   }, [cabecera, tipo]);
 
   const totalWidth = useMemo(
@@ -41,7 +43,7 @@ export const useTablaVirtualizada = (rows, rowsOriginal, tipo, buscar) => {
 
   // Virtualizador
   const rowVirtualizer = useVirtualizer({
-    count: rows.length - 2,
+    count: rows.length,
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => 35,
   });
