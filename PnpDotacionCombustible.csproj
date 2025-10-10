@@ -16,4 +16,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include=".env" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

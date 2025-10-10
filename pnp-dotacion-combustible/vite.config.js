@@ -3,29 +3,54 @@ import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { visualizer } from "rollup-plugin-visualizer";
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig(({ command }) => {
   const isDev = command === "serve";
+  const outDir = resolve(__dirname, "../wwwroot/js/home");
+
   return {
     root: resolve(__dirname, "src"),
+    publicDir: false,
     plugins: [
       react(),
       tailwindcss(),
-      visualizer({
-        filename: "stats.html",
-        gzipSize: true,
-        brotliSize: true,
-        open: false,
-      }),
+      {
+        name: "move-manifest",
+        closeBundle() {
+          const manifestSrc = resolve(outDir, ".vite/manifest.json");
+          const manifestDest = resolve(outDir, "manifest.json");
+          try {
+            if (existsSync(manifestSrc)) {
+              const data = readFileSync(manifestSrc, "utf-8");
+              mkdirSync(outDir, { recursive: true });
+              writeFileSync(manifestDest, data);
+              console.log(`manifest.json copiado a ${manifestDest}`);
+            }
+          } catch (e) {
+            console.warn("No se pudo mover manifest:", e.message);
+          }
+        },
+      },
+      {
+        name: "mark-fonts-external",
+        enforce: "pre",
+        resolveId(source) {
+          if (source.startsWith("/fonts/")) {
+            return { id: source, external: true };
+          }
+          return null;
+        },
+      },
     ],
     build: {
-      outDir: resolve(__dirname, "../wwwroot/js/home"),
+      outDir,
+      manifest: true,
       cssCodeSplit: true,
-      emptyOutDir: true,
+      emptyOutDir: false,
       rollupOptions: {
         input: resolve(__dirname, "src/home/index.jsx"),
         output: {
@@ -38,10 +63,9 @@ export default defineConfig(({ command }) => {
             : "assets/[name].[hash].[ext]",
         },
       },
-      sourcemap: true,
     },
     server: {
-      port: 5101,
+      port: 5102,
       strictPort: true,
       hmr: {
         host: "localhost",

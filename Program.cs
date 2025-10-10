@@ -37,7 +37,7 @@ if (builder.Environment.IsDevelopment())
     {
         options.AddPolicy("ViteDevelopment", policy =>
         {
-            policy.WithOrigins("http://localhost:5101")
+            policy.WithOrigins("http://localhost:5102")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
