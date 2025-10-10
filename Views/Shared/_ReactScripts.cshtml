@@ -1,16 +1,26 @@
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment Env
+@using PnpDotacionCombustible.Helpers
+
 @if (ViewBag.IsDevelopment == true)
 {
     <script type="module">
-        import RefreshRuntime from 'http://localhost:5101/@@react-refresh';
+        import RefreshRuntime from 'http://localhost:5102/@@react-refresh';
         RefreshRuntime.injectIntoGlobalHook(window);
         window.$RefreshReg$ = () => {};
         window.$RefreshSig$ = () => (type) => type;
         window.__vite_plugin_react_preamble_installed__ = true;
     </script>
-    <script type="module" src="http://localhost:5101/home/index.jsx"></script>
+    <script type="module" src="http://localhost:5102/home/index.jsx"></script>
 }
 else
 {
-    <script type="module" src="/js/home/index.js"></script>
-    <link rel="stylesheet" href="/js/home/assets/index.css" />
+    var entry = "home/index.jsx";
+    var jsPath = ViteHelper.GetViteAsset(entry, Env);
+    var cssPaths = ViteHelper.GetViteCssAssets(entry, Env);
+    foreach (var cssPath in cssPaths)
+    {
+        <link rel="stylesheet" href="@cssPath" />
+    }
+    <script type="module" src="@jsPath"></script>
 }
