@@ -28,7 +28,7 @@ const useFetch = (url) => {
         setData(rows);
       })
       .catch((error) => {
-        console.error("❌ Error en fetch:", error);
+        console.error("Error en fetch:", error);
         if (!cancelled) setError(error);
       })
       .finally(() => {

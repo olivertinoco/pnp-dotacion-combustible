@@ -114,4 +114,92 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet("/Home/TraerListaProgExtraOrd")]
+    public string TraerListaProgExtraOrd()
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_crud_prog_extraOrdinaria", "@data", "0");
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpGet("/Home/TraerListaProgExtraOrdParam")]
+    public string TraerListaProgExtraOrdParam(string dato)
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_crud_prog_extraOrdinaria", "@data", dato);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpPost("/Home/TraerDatosProgVehiculoAyudas")]
+    public string TraerDatosProgVehiculoAyudas()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_vehiculo_programacion", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpPost("/Home/TraerDatosProgUnidadesAyudas")]
+    public string TraerDatosProgUnidadesAyudas()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_unidad_programacion", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpPost("/Home/TraerDatosProgCIPAyudas")]
+    public string TraerDatosProgCIPAyudas()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_CIP_programacion", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
 }
