@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { forwardRef } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { BaseTablaMatriz } from "./BaseTablaMatriz";
 import PopupBusqueda from "./PopupBusqueda";
 import { useSelectStore } from "../store/selectStore";
@@ -24,15 +23,16 @@ const CustomElement = forwardRef(
     );
 
     if (typeCode === 100) {
-      const { value, campo } = dataAttrs;
+      const { value, campo, item } = dataAttrs;
       return (
         <input
           type="hidden"
           ref={ref}
           data-campo={campo}
           data-value={value}
-          value={value}
-          defaultValue={value}
+          data-item={item}
+          value={value ?? ""}
+          defaultValue={value ?? ""}
         />
       );
     }
@@ -546,17 +546,19 @@ const CustomElement = forwardRef(
                   useSelectStore.getState();
                 setShowPopupEspecial(false);
                 if (currentItems && currentItems.length > 0) {
-                  const { value, label } = currentItems[0];
+                  const fila = currentItems[0];
+                  const valor = fila[0] ?? "";
+                  const label = fila[1] ?? "";
                   setUsarHardcoded(true);
                   setHardcodedOption({
-                    value: value ?? "",
+                    value: valor ?? "",
                     label: label ?? "",
                   });
                   if (ref?.current) {
-                    ref.current.dataset.value = value ?? "";
+                    ref.current.dataset.value = valor ?? "";
                     ref.current.dataset.label = label ?? "";
-                    ref.current.value = value ?? "";
-                    setDataValue(value ?? "");
+                    ref.current.value = valor ?? "";
+                    setDataValue(valor ?? "");
                   }
                   props.onPopupClose?.("cerrar", null);
                 }

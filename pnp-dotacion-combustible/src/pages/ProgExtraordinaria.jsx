@@ -247,11 +247,28 @@ const ProgExtraordinaria = () => {
   const preData = typeof data?.[0] === "string" ? data?.[0]?.split("~") : [];
   const info = preData?.[0]?.split("|") ?? [];
   const infoMeta = preData?.[1]?.split("|") ?? [];
+  const infoTitleGrupo = preData?.[2]?.split("|") ?? [];
 
-  const informacion = (infoMeta ?? []).map((meta, idx) => ({
+  const informacionAux = (infoMeta ?? []).map((meta, idx) => ({
     data: (info ?? [])[idx] ?? "",
     metadata: (meta ?? "").split("*"),
   }));
+
+  // NOTA: AGRUPAMOS Y REORDENAMOS ANTES DE PINTAR:
+  //   =============================================
+  const informacion = informacionAux
+    .map((item) => {
+      const metadata = [...(item.metadata ?? [])];
+      const raw = metadata[9];
+      if (raw && raw.includes("+")) {
+        const [parteIzquierda, parteDerecha] = raw.split("+");
+        metadata[9] = parteIzquierda;
+        return { ...item, metadata, _orden: Number(parteDerecha) || 0 };
+      }
+      return { ...item, metadata, _orden: 0 };
+    })
+    .sort((a, b) => a._orden - b._orden)
+    .map(({ _orden, ...rest }) => rest);
 
   const listasData = (data ?? []).slice(1);
 
@@ -261,20 +278,39 @@ const ProgExtraordinaria = () => {
     return acc;
   }, {});
 
+  const grupos = infoTitleGrupo
+    .map((titulo) => {
+      const [id, nombre] = titulo.split("*");
+      return { id, nombre };
+    })
+    .filter((g) => g.id !== undefined);
+
+  const agrupado = grupos.map((grupo) => ({
+    ...grupo,
+    items: informacion.filter((item) => item.metadata[9] === grupo.id),
+  }));
+
   // NOTA: PARA VISUALIZAR LOS DATOS DEL HIDDENFIELD
   // ===============================================
   useEffect(() => {
     const timer = setTimeout(() => {
-      elementosRef.current.forEach((el) => {
+      const valores = Object.values(elementosRef.current);
+      if (!valores.length) return;
+      valores.forEach((el) => {
         if (el?.type === "hidden") {
           console.log(
-            `Hidden encontrado: campo=${el.dataset.campo}, valor=${el.value}`,
+            `Hidden encontrado: campo=${el.dataset?.campo}, item=${el.dataset?.item}, value=${el.dataset?.value}`,
           );
         }
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [informacion, refreshKey]);
+  }, [agrupado, refreshKey]);
+  // ===============================================
+
+  useEffect(() => {
+    elementosRef.current = elementosRef.current.filter((el) => el !== null);
+  }, [agrupado]);
 
   const handleChange = (e) => {
     const { value, valor, campo, item } = e.target.dataset;
@@ -300,51 +336,51 @@ const ProgExtraordinaria = () => {
     return lista;
   };
 
-  const handlePopup = (campo) => {};
+  const handlePopup = (item) => {};
 
-  const handlePopupClose = (accion, valor, campo) => {
+  const handlePopupClose = (accion, valor, item) => {
     const { selectedItems } = useSelectStore.getState();
+    if (!selectedItems || selectedItems.length === 0) return;
+    const elementoSeleccionado = selectedItems[0];
+    console.log("zustand:", elementoSeleccionado);
 
-    if (selectedItems && selectedItems.length > 0) {
-      const elementoSeleccionado = selectedItems[0];
-      console.log("zustand:", elementoSeleccionado);
-      if (campo === "4.5") {
-        setTimeout(() => {
-          const camposActualizar = [
-            { campo: "4.2", indice: 0 },
-            { campo: "4.4", indice: 1 },
-            { campo: "4.5", indice: 4 },
-            { campo: "4.6", indice: 5 },
-            { campo: "4.7", indice: 2 },
-            { campo: "4.8", indice: 3 },
-          ];
+    if (item === "990") {
+      setTimeout(() => {
+        const camposActualizar = [
+          { item: "11", indice: 2 },
+          { item: "12", indice: 3 },
+          { item: "990", indice: 6 },
+          { item: "7", indice: 7 },
+          { item: "1", indice: 4 },
+          { item: "2", indice: 5 },
+        ];
 
-          setDatasets((prev) => {
-            const nuevo = { ...prev };
-            camposActualizar.forEach(({ campo, indice }) => {
-              const el = elementosRef.current.find(
-                (el) => el?.dataset?.campo === campo,
-              );
-              if (!el) return;
-              const valor = elementoSeleccionado[indice];
-              el.value = valor ?? "";
-              el.dataset.value = valor ?? "";
-              if (el.tagName === "SELECT" && el.options.length > 0) {
-                el.options[0].textContent = valor ?? "";
-                el.options[0].value = valor ?? "";
-              }
-              el.dispatchEvent(new Event("change", { bubbles: true }));
-              nuevo[campo] = {
-                value: valor,
-                item: el.dataset.item ?? "",
-              };
-            });
-            return nuevo;
+        setDatasets((prev) => {
+          const nuevo = { ...prev };
+          camposActualizar.forEach(({ item, indice }) => {
+            const el = elementosRef.current[item];
+            if (!el) return;
+            const valor = elementoSeleccionado[indice] ?? "";
+            el.value = valor;
+            el.dataset.value = valor;
+
+            if (el.tagName === "SELECT" && el.options.length > 0) {
+              const opt = el.options[0];
+              opt.textContent = valor;
+              opt.value = valor;
+            }
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+            nuevo[item] = {
+              value: valor,
+              item: el.dataset.item ?? "",
+            };
           });
-          const { setSelectedItems } = useSelectStore.getState();
-          setSelectedItems([]);
-        }, 20);
-      }
+          return nuevo;
+        });
+
+        const { setSelectedItems } = useSelectStore.getState();
+        setSelectedItems([]);
+      }, 50);
     }
   };
 
@@ -375,97 +411,118 @@ const ProgExtraordinaria = () => {
         <span className="text-green-800">{isEdit ? "EDITAR" : "NUEVO"}</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {informacion.map((datos, idx) => {
-          const { data, metadata } = datos;
-          const typeCode = Number(metadata?.[5] ?? 0);
-          let maxLength = metadata?.[3] ? Number(metadata[3]) : 0;
-          const isRequired = metadata?.[1] === "0";
-          const isDisabled = metadata?.[8] === "1";
-          const hideElement = metadata?.[12] === "1";
-          maxLength = metadata?.[4] === "" ? maxLength : Number(metadata[4]);
+      {agrupado.map(
+        (grupo) =>
+          grupo.items.length > 0 && (
+            <div key={grupo.id} className="mb-8">
+              <h2 className="text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
+                {grupo.nombre}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {grupo.items.map((datos) => {
+                  const idx = informacion.findIndex(
+                    (item) => item.metadata[0] === datos.metadata[0],
+                  );
+                  const { data, metadata } = datos;
+                  const typeCode = Number(metadata?.[5] ?? 0);
+                  let maxLength = metadata?.[3] ? Number(metadata[3]) : 0;
+                  const isRequired = metadata?.[1] === "0";
+                  const isDisabled = metadata?.[8] === "1";
+                  const hideElement = metadata?.[13] === "1";
+                  maxLength =
+                    metadata?.[4] === "" ? maxLength : Number(metadata[4]);
 
-          return (
-            <CustomElement
-              key={`${idx}-${refreshKey}`}
-              ref={(el) => (elementosRef.current[idx] = el)}
-              typeCode={typeCode}
-              etiqueta={metadata[7] ?? ""}
-              placeholder={metadata[7] ?? ""}
-              popupTipo={metadata[6] ?? ""}
-              url={urlMap[metadata[6]] ?? ""}
-              onPopupClick={() => handlePopup(metadata[0])}
-              onPopupClose={(accion, valor) =>
-                handlePopupClose(accion, valor, metadata[0])
-              }
-              style={
-                hideElement
-                  ? {
-                      visibility: "hidden",
-                      position: "absolute",
-                      width: 0,
-                      height: 0,
-                      overflow: "hidden",
-                    }
-                  : {}
-              }
-              {...(maxLength > 0 ? { maxLength } : {})}
-              {...(isDisabled ? { disabled: true } : {})}
-              {...(isRequired ? { required: true } : {})}
-              {...(typeCode === 103
-                ? {
-                    checked: (datasets[metadata[0]]?.value ?? data) === "1",
-                  }
-                : {})}
-              {...(metadata?.[2] === "1" && typeCode === 101
-                ? { tipoDato: "entero" }
-                : {})}
-              {...(metadata?.[2] === "2" && typeCode === 101
-                ? { tipoDato: "decimal" }
-                : {})}
-              {...(typeCode === 111
-                ? {
-                    defaultValue:
-                      mapaListas[metadata[6]]?.length > 0
-                        ? datos.metadata[0]
-                        : "",
-                    ...(metadata?.[9] === "1" ? { isDefault: 1 } : {}),
-                  }
-                : typeCode === 151
-                  ? {
-                      defaultValue: datos.data,
-                      unaLinea: metadata?.[9],
-                      offsetColumnas: metadata?.[10],
-                      ancho: metadata?.[11],
-                      isFilter: metadata[0] === "1.11" ? datoModelos : "",
-                    }
-                  : {
-                      defaultValue: datos.data,
-                    })}
-              dataAttrs={{
-                value: datasets[metadata[0]]?.value ?? data,
-                valor: data,
-                campo: metadata[0],
-                item: metadata[6],
-              }}
-              onChange={handleChange}
-              {...(mapaListas[metadata[6]] || datasets[metadata[0]]?.listaAux
-                ? {
-                    options: (() => {
-                      const base =
-                        llenarCombos(metadata[6], metadata[0], data) || [];
-                      const auxRaw = datasets[metadata[0]]?.listaAux;
-                      const auxArr = Array.isArray(auxRaw)
-                        ? auxRaw.filter((v) => v && v.trim() !== "")
-                        : [];
-                      return base.concat(auxArr);
-                    })(),
-                  }
-                : {})}
-            />
-          );
-        })}
-      </div>
+                  return (
+                    <CustomElement
+                      key={`${idx}-${refreshKey}`}
+                      ref={(el) => {
+                        if (el) elementosRef.current[metadata[6]] = el;
+                      }}
+                      typeCode={typeCode}
+                      etiqueta={metadata[7] ?? ""}
+                      placeholder={metadata[7] ?? ""}
+                      popupTipo={metadata[6] ?? ""}
+                      url={urlMap[metadata[6]] ?? ""}
+                      onPopupClick={() => handlePopup(metadata[0])}
+                      onPopupClose={(accion, valor) =>
+                        handlePopupClose(accion, valor, metadata[6])
+                      }
+                      style={
+                        hideElement
+                          ? {
+                              visibility: "hidden",
+                              position: "absolute",
+                              width: 0,
+                              height: 0,
+                              overflow: "hidden",
+                            }
+                          : {}
+                      }
+                      {...(maxLength > 0 ? { maxLength } : {})}
+                      {...(isDisabled ? { disabled: true } : {})}
+                      {...(isRequired ? { required: true } : {})}
+                      {...(typeCode === 103
+                        ? {
+                            checked:
+                              (datasets[metadata[0]]?.value ?? data) === "1",
+                          }
+                        : {})}
+                      {...(metadata?.[2] === "1" && typeCode === 101
+                        ? { tipoDato: "entero" }
+                        : {})}
+                      {...(metadata?.[2] === "2" && typeCode === 101
+                        ? { tipoDato: "decimal" }
+                        : {})}
+                      {...(typeCode === 111
+                        ? {
+                            defaultValue:
+                              mapaListas[metadata[6]]?.length > 0
+                                ? datos.metadata[0]
+                                : "",
+                            ...(metadata?.[10] === "1" ? { isDefault: 1 } : {}),
+                          }
+                        : typeCode === 151
+                          ? {
+                              defaultValue: datos.data,
+                              unaLinea: metadata?.[10],
+                              offsetColumnas: metadata?.[11],
+                              ancho: metadata?.[12],
+                              isFilter:
+                                metadata[0] === "1.11" ? datoModelos : "",
+                            }
+                          : {
+                              defaultValue: datos.data,
+                            })}
+                      dataAttrs={{
+                        value: datasets[metadata[6]]?.value ?? data,
+                        valor: data,
+                        campo: metadata[0],
+                        item: metadata[6],
+                      }}
+                      onChange={handleChange}
+                      {...(mapaListas[metadata[6]] ||
+                      datasets[metadata[0]]?.listaAux
+                        ? {
+                            options: (() => {
+                              const base =
+                                llenarCombos(metadata[6], metadata[0], data) ||
+                                [];
+                              const auxRaw = datasets[metadata[0]]?.listaAux;
+                              const auxArr = Array.isArray(auxRaw)
+                                ? auxRaw.filter((v) => v && v.trim() !== "")
+                                : [];
+                              return base.concat(auxArr);
+                            })(),
+                          }
+                        : {})}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ),
+      )}
+
       <div className="mt-8 mb-2">
         <CustomElement
           typeCode={120}
