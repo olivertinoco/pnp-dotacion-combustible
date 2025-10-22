@@ -12,18 +12,28 @@ const useValidationFields = (elementosRef) => {
     let hayErrores = false;
     const nuevosData = [];
     const nuevosCampos = [];
+    const unicos = new Set();
 
-    elementosRef.current.forEach((wrapper) => {
-      if (!wrapper) return;
+    Object.values(elementosRef.current).forEach((wrapper) => {
+      if (!wrapper || unicos.has(wrapper)) return;
+      unicos.add(wrapper);
       const input = wrapper.querySelector("input, select, textarea") || wrapper;
-      if (!input) return;
-      if (input.type === "hidden") return;
+
+      if (
+        input?.type?.toLowerCase() === "hidden" ||
+        wrapper?.type?.toLowerCase() === "hidden" ||
+        input?.getAttribute("type") === "hidden" ||
+        wrapper?.getAttribute("type") === "hidden" ||
+        wrapper.querySelector('input[type="hidden"]')
+      ) {
+        return;
+      }
 
       const dsValue = input.dataset?.value ?? "";
       const dsValor = input.dataset?.valor ?? "";
       const dsCampo = input.dataset?.campo ?? "";
 
-      if (dsValue !== dsValor && !dsCampo.startsWith("0")) {
+      if (dsValue !== dsValor && !dsCampo.startsWith("100")) {
         nuevosData.push(dsValue);
         nuevosCampos.push(dsCampo);
       }
@@ -51,7 +61,16 @@ const useValidationFields = (elementosRef) => {
       }
     });
 
-    setValoresCambiados({ data: nuevosData, campos: nuevosCampos });
+    const camposLimpios = [];
+    const dataLimpios = [];
+    nuevosCampos.forEach((campo, i) => {
+      if (campo && !camposLimpios.includes(campo)) {
+        camposLimpios.push(campo);
+        dataLimpios.push(nuevosData[i]);
+      }
+    });
+
+    setValoresCambiados({ data: dataLimpios, campos: camposLimpios });
     if (hayErrores) {
       setEsValido(false);
       setMensajeError("Existen campos obligatorios");

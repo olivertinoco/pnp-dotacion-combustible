@@ -150,19 +150,32 @@ const PopupBusqueda = forwardRef(
             Busqueda de {configTable.title}
           </h2>
 
-          <div className="flex flex-nowrap items-end gap-4 mb-6 overflow-x-auto pb-2">
+          <div
+            // className="flex flex-nowrap items-end gap-4 mb-6 overflow-x-auto pb-2"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          >
             {informacion.map((datos, idx) => {
               const { data, metadata } = datos;
               const typeCode = Number(metadata?.[5] ?? 0);
               let maxLength = metadata?.[3] ? Number(metadata[3]) : 0;
               const isRequired = metadata?.[1] === "0";
               const isDisabled = metadata?.[8] === "1";
-              const hideElement = metadata?.[12] === "1";
+              const hideElement = metadata?.[14] === "1";
               maxLength =
                 metadata?.[4] === "" ? maxLength : Number(metadata[4]);
 
+              const colSpanMap = {
+                1: "col-span-1",
+                2: "col-span-2",
+                3: "col-span-3",
+                4: "col-span-4",
+              };
+
               return (
-                <div key={idx} className="flex-shrink-0 w-auto">
+                <div
+                  key={idx}
+                  className={`${colSpanMap[metadata?.[10]] ?? "col-span-1"} min-w-0`}
+                >
                   <CustomElement
                     key={idx}
                     ref={(el) => (elementosRef.current[idx] = el)}
@@ -202,15 +215,15 @@ const PopupBusqueda = forwardRef(
                             mapaListas[metadata[6]]?.length > 0
                               ? datos.metadata[0]
                               : "",
-                          ...(metadata?.[9] === "1" ? { isDefault: 1 } : {}),
+                          ...(metadata?.[11] === "1" ? { isDefault: 1 } : {}),
                           options: mapaListas.default,
                         }
                       : typeCode === 151
                         ? {
                             defaultValue: datos.data,
-                            unaLinea: metadata?.[9],
-                            offsetColumnas: metadata?.[10],
-                            ancho: metadata?.[11],
+                            unaLinea: metadata?.[11],
+                            offsetColumnas: metadata?.[12],
+                            ancho: metadata?.[13],
                           }
                         : {
                             defaultValue: datos.data,
@@ -225,15 +238,15 @@ const PopupBusqueda = forwardRef(
                 </div>
               );
             })}
-            <div className="flex-shrink-0">
-              <CustomElement
-                typeCode={120}
-                onClick={handleClick}
-                {...(isSubmitting ? { disabled: true } : {})}
-              >
-                {isSubmitting ? "BUSCANDO..." : "BUSCAR"}
-              </CustomElement>
-            </div>
+          </div>
+          <div className="flex-shrink-0 mt-4">
+            <CustomElement
+              typeCode={120}
+              onClick={handleClick}
+              {...(isSubmitting ? { disabled: true } : {})}
+            >
+              {isSubmitting ? "BUSCANDO..." : "BUSCAR"}
+            </CustomElement>
           </div>
           {mensajeError && (
             <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">

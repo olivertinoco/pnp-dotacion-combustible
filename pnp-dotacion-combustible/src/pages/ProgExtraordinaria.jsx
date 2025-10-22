@@ -184,19 +184,27 @@ const ProgExtraordinaria = () => {
       return;
     }
 
-    const hidden100 = elementosRef.current.find(
-      (el) => el?.type === "hidden" && el.dataset.campo,
-    );
-    if (hidden100) {
-      valoresCambiados.campos.unshift(hidden100.dataset.campo);
-      valoresCambiados.data.unshift(hidden100.dataset.value);
-    }
+    const nuevosData = [...valoresCambiados.data];
+    const nuevosCampos = [...valoresCambiados.campos];
+    const unicos = new Set();
+
+    Object.values(elementosRef.current).forEach((el) => {
+      if (el?.type === "hidden" && el.dataset.campo) {
+        const clave = `${el.dataset.campo}-${el.dataset.value}`;
+        if (!unicos.has(clave)) {
+          unicos.add(clave);
+          nuevosCampos.unshift(el.dataset.campo);
+          nuevosData.unshift(el.dataset.value);
+        }
+      }
+    });
+
     const dataEnviar =
       usuario.trim() +
       "~" +
-      valoresCambiados.data.join("|") +
+      nuevosData.join("|") +
       "|" +
-      valoresCambiados.campos.join("|");
+      nuevosCampos.join("|");
 
     const formData = new FormData();
     formData.append("data", dataEnviar);
@@ -216,15 +224,19 @@ const ProgExtraordinaria = () => {
         setIsEdit(true);
 
         console.log("Respuesta Grabacion Datos Datos:", result);
-        if (hidden100 && result.trim() !== "") {
-          hidden100.value = result.trim();
-          hidden100.dataset.value = result.trim();
-        }
+        // if (result.trim() !== "") {
+        //   const elPK = elementosRef.current.find(
+        //     (el) => el?.dataset?.item === "10",
+        //   );
+        //   elPK.dataset.value = result.trim();
 
-        elementosRef.current.forEach((el) => {
-          if (!el) return;
-          el.dataset.valor = el.dataset.value ?? "";
-        });
+        //   console.log("Elemento Encontrado y asignado:", elPK);
+        // }
+
+        // elementosRef.current.forEach((el) => {
+        //   if (!el) return;
+        //   el.dataset.valor = el.dataset.value ?? "";
+        // });
       }
     } catch (err) {
       console.error(err);
@@ -292,24 +304,38 @@ const ProgExtraordinaria = () => {
 
   // NOTA: PARA VISUALIZAR LOS DATOS DEL HIDDENFIELD
   // ===============================================
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const valores = Object.values(elementosRef.current);
-      if (!valores.length) return;
-      valores.forEach((el) => {
-        if (el?.type === "hidden") {
-          console.log(
-            `Hidden encontrado: campo=${el.dataset?.campo}, item=${el.dataset?.item}, value=${el.dataset?.value}`,
-          );
-        }
-      });
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [agrupado, refreshKey]);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     const valores = Object.values(elementosRef.current);
+  //     if (!valores.length) return;
+  //     valores.forEach((el) => {
+  //       if (el?.type === "hidden") {
+  //         console.log(
+  //           `Hidden encontrado: campo=${el.dataset?.campo}, item=${el.dataset?.item}, value=${el.dataset?.value}`,
+  //         );
+  //       }
+  //     });
+  //   }, 0);
+  //   return () => clearTimeout(timer);
+  // }, [agrupado, refreshKey]);
   // ===============================================
 
   useEffect(() => {
     elementosRef.current = elementosRef.current.filter((el) => el !== null);
+  }, [agrupado]);
+
+  // NOTA: ASIGNA LOS VALORE POR DEFAULT DE LOS COMBOS
+  // ===================================================
+  useEffect(() => {
+    elementosRef.current.forEach((el) => {
+      if (
+        el?.tagName === "SELECT" &&
+        el.options.length > 0 &&
+        !el.dataset.value
+      ) {
+        el.dataset.value = el.options[0].value ?? "";
+      }
+    });
   }, [agrupado]);
 
   const handleChange = (e) => {
@@ -338,50 +364,45 @@ const ProgExtraordinaria = () => {
 
   const handlePopup = (item) => {};
 
-  const handlePopupClose = (accion, valor, item) => {
+  const handlePopupClose = (item) => {
     const { selectedItems } = useSelectStore.getState();
     if (!selectedItems || selectedItems.length === 0) return;
     const elementoSeleccionado = selectedItems[0];
-    console.log("zustand:", elementoSeleccionado);
+    const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
+    // console.log("zustand:", elementoSeleccionado);
 
-    if (item === "990") {
-      setTimeout(() => {
-        const camposActualizar = [
-          { item: "11", indice: 2 },
-          { item: "12", indice: 3 },
-          { item: "990", indice: 6 },
-          { item: "7", indice: 7 },
-          { item: "1", indice: 4 },
-          { item: "2", indice: 5 },
-        ];
+    setTimeout(() => {
+      const camposActualizar = listas.map((str) => {
+        const [item, indice] = str.split("|");
+        return { item, indice: Number(indice) };
+      });
 
-        setDatasets((prev) => {
-          const nuevo = { ...prev };
-          camposActualizar.forEach(({ item, indice }) => {
-            const el = elementosRef.current[item];
-            if (!el) return;
-            const valor = elementoSeleccionado[indice] ?? "";
-            el.value = valor;
-            el.dataset.value = valor;
+      setDatasets((prev) => {
+        const nuevo = { ...prev };
+        camposActualizar.forEach(({ item, indice }) => {
+          const el = elementosRef.current[item];
+          if (!el) return;
+          const valor = elementoSeleccionado[indice] ?? "";
+          el.value = valor;
+          el.dataset.value = valor;
 
-            if (el.tagName === "SELECT" && el.options.length > 0) {
-              const opt = el.options[0];
-              opt.textContent = valor;
-              opt.value = valor;
-            }
-            el.dispatchEvent(new Event("input", { bubbles: true }));
-            nuevo[item] = {
-              value: valor,
-              item: el.dataset.item ?? "",
-            };
-          });
-          return nuevo;
+          if (el.tagName === "SELECT" && el.options.length > 0) {
+            const opt = el.options[0];
+            opt.textContent = valor;
+            opt.value = valor;
+          }
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          nuevo[item] = {
+            value: valor,
+            item: el.dataset.item ?? "",
+          };
         });
+        return nuevo;
+      });
 
-        const { setSelectedItems } = useSelectStore.getState();
-        setSelectedItems([]);
-      }, 50);
-    }
+      const { setSelectedItems } = useSelectStore.getState();
+      setSelectedItems([]);
+    }, 50);
   };
 
   const urlMap = {
@@ -428,94 +449,108 @@ const ProgExtraordinaria = () => {
                   let maxLength = metadata?.[3] ? Number(metadata[3]) : 0;
                   const isRequired = metadata?.[1] === "0";
                   const isDisabled = metadata?.[8] === "1";
-                  const hideElement = metadata?.[13] === "1";
+                  const hideElement = metadata?.[14] === "1";
                   maxLength =
                     metadata?.[4] === "" ? maxLength : Number(metadata[4]);
 
+                  const colSpanMap = {
+                    1: "col-span-1",
+                    2: "col-span-2",
+                    3: "col-span-3",
+                    4: "col-span-4",
+                  };
+
                   return (
-                    <CustomElement
+                    <div
                       key={`${idx}-${refreshKey}`}
-                      ref={(el) => {
-                        if (el) elementosRef.current[metadata[6]] = el;
-                      }}
-                      typeCode={typeCode}
-                      etiqueta={metadata[7] ?? ""}
-                      placeholder={metadata[7] ?? ""}
-                      popupTipo={metadata[6] ?? ""}
-                      url={urlMap[metadata[6]] ?? ""}
-                      onPopupClick={() => handlePopup(metadata[0])}
-                      onPopupClose={(accion, valor) =>
-                        handlePopupClose(accion, valor, metadata[6])
-                      }
-                      style={
-                        hideElement
+                      className={`${colSpanMap[metadata?.[10]] ?? "col-span-1"} min-w-0`}
+                    >
+                      <CustomElement
+                        ref={(el) => {
+                          if (el) elementosRef.current[metadata[6]] = el;
+                        }}
+                        typeCode={typeCode}
+                        etiqueta={metadata[7] ?? ""}
+                        placeholder={metadata[7] ?? ""}
+                        popupTipo={metadata[6] ?? ""}
+                        url={urlMap[metadata[6]] ?? ""}
+                        onPopupClick={() => handlePopup(metadata[6])}
+                        onPopupClose={() => handlePopupClose(metadata[6])}
+                        style={
+                          hideElement
+                            ? {
+                                visibility: "hidden",
+                                position: "absolute",
+                                width: 0,
+                                height: 0,
+                                overflow: "hidden",
+                              }
+                            : {}
+                        }
+                        {...(maxLength > 0 ? { maxLength } : {})}
+                        {...(isDisabled ? { disabled: true } : {})}
+                        {...(isRequired ? { required: true } : {})}
+                        {...(typeCode === 103
                           ? {
-                              visibility: "hidden",
-                              position: "absolute",
-                              width: 0,
-                              height: 0,
-                              overflow: "hidden",
+                              checked:
+                                (datasets[metadata[0]]?.value ?? data) === "1",
                             }
-                          : {}
-                      }
-                      {...(maxLength > 0 ? { maxLength } : {})}
-                      {...(isDisabled ? { disabled: true } : {})}
-                      {...(isRequired ? { required: true } : {})}
-                      {...(typeCode === 103
-                        ? {
-                            checked:
-                              (datasets[metadata[0]]?.value ?? data) === "1",
-                          }
-                        : {})}
-                      {...(metadata?.[2] === "1" && typeCode === 101
-                        ? { tipoDato: "entero" }
-                        : {})}
-                      {...(metadata?.[2] === "2" && typeCode === 101
-                        ? { tipoDato: "decimal" }
-                        : {})}
-                      {...(typeCode === 111
-                        ? {
-                            defaultValue:
-                              mapaListas[metadata[6]]?.length > 0
-                                ? datos.metadata[0]
-                                : "",
-                            ...(metadata?.[10] === "1" ? { isDefault: 1 } : {}),
-                          }
-                        : typeCode === 151
+                          : {})}
+                        {...(metadata?.[2] === "1" && typeCode === 101
+                          ? { tipoDato: "entero" }
+                          : {})}
+                        {...(metadata?.[2] === "2" && typeCode === 101
+                          ? { tipoDato: "decimal" }
+                          : {})}
+                        {...(typeCode === 111
                           ? {
-                              defaultValue: datos.data,
-                              unaLinea: metadata?.[10],
-                              offsetColumnas: metadata?.[11],
-                              ancho: metadata?.[12],
-                              isFilter:
-                                metadata[0] === "1.11" ? datoModelos : "",
+                              defaultValue:
+                                mapaListas[metadata[6]]?.length > 0
+                                  ? datos.metadata[0]
+                                  : "",
+                              ...(metadata?.[11] === "1"
+                                ? { isDefault: 1 }
+                                : {}),
                             }
-                          : {
-                              defaultValue: datos.data,
-                            })}
-                      dataAttrs={{
-                        value: datasets[metadata[6]]?.value ?? data,
-                        valor: data,
-                        campo: metadata[0],
-                        item: metadata[6],
-                      }}
-                      onChange={handleChange}
-                      {...(mapaListas[metadata[6]] ||
-                      datasets[metadata[0]]?.listaAux
-                        ? {
-                            options: (() => {
-                              const base =
-                                llenarCombos(metadata[6], metadata[0], data) ||
-                                [];
-                              const auxRaw = datasets[metadata[0]]?.listaAux;
-                              const auxArr = Array.isArray(auxRaw)
-                                ? auxRaw.filter((v) => v && v.trim() !== "")
-                                : [];
-                              return base.concat(auxArr);
-                            })(),
-                          }
-                        : {})}
-                    />
+                          : typeCode === 151
+                            ? {
+                                defaultValue: datos.data,
+                                unaLinea: metadata?.[11],
+                                offsetColumnas: metadata?.[12],
+                                ancho: metadata?.[13],
+                                isFilter:
+                                  metadata[0] === "1.11" ? datoModelos : "",
+                              }
+                            : {
+                                defaultValue: datos.data,
+                              })}
+                        dataAttrs={{
+                          value: datasets[metadata[6]]?.value ?? data,
+                          valor: data,
+                          campo: metadata[0],
+                          item: metadata[6],
+                        }}
+                        onChange={handleChange}
+                        {...(mapaListas[metadata[6]] ||
+                        datasets[metadata[0]]?.listaAux
+                          ? {
+                              options: (() => {
+                                const base =
+                                  llenarCombos(
+                                    metadata[6],
+                                    metadata[0],
+                                    data,
+                                  ) || [];
+                                const auxRaw = datasets[metadata[0]]?.listaAux;
+                                const auxArr = Array.isArray(auxRaw)
+                                  ? auxRaw.filter((v) => v && v.trim() !== "")
+                                  : [];
+                                return base.concat(auxArr);
+                              })(),
+                            }
+                          : {})}
+                      />
+                    </div>
                   );
                 })}
               </div>

@@ -114,6 +114,24 @@ public class HomeController : Controller
         }
     }
 
+    [HttpPost("/Home/GrabarDatosVarios")]
+    public string GrabarDatosVarios()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_crud_generico01", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
     [HttpGet("/Home/TraerListaProgExtraOrd")]
     public string TraerListaProgExtraOrd()
     {
