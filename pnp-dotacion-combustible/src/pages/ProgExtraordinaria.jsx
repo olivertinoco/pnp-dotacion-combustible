@@ -20,6 +20,8 @@ const ProgExtraordinaria = () => {
   const [datoModelos, setDatoModelos] = useState("");
   const [closeChild, setCloseChild] = useState(false);
   const closeChildRef = useRef(closeChild);
+  const [forcedOption, setForcedOption] = useState({});
+  const [optionFlag, setOptionFlag] = useState({});
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -34,146 +36,202 @@ const ProgExtraordinaria = () => {
   }, [closeChild]);
 
   useEffect(() => {
-    const hidden100 = elementosRef.current.find(
-      (el) => el?.type === "hidden" && el.dataset.value?.trim() !== "",
-    );
-    if (hidden100) {
+    let hayHiddenConValor = false;
+    elementosRef.current.forEach((el) => {
+      if (el?.type === "hidden" && el.dataset.value?.trim() !== "") {
+        hayHiddenConValor = true;
+      }
+    });
+    if (hayHiddenConValor) {
       setIsEdit(true);
     }
   }, []);
 
-  const listaAuxRef = useRef("");
-  const handleBuscarClick = async () => {
-    listaAuxRef.current = "";
-    if (inputRef.current) {
-      const valorParametro = `zz|${inputRef.current.value}`;
-      const result = await runFetch(
-        `${API_RESULT_LISTAR}Param?dato=${encodeURIComponent(valorParametro)}`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "text/plain",
-            "Content-Type": "text/plain",
-          },
-        },
-      );
+  const limpiarCamposYStores = () => {
+    setDatasets({});
+    setForcedOption({});
+    setOptionFlag({});
+    setIsEdit(false);
 
-      // const preData = result.split("~");
-      const preData = typeof result === "string" ? result.split("~") : [];
-      const info = preData?.[0]?.split("|") ?? [];
-      const infoMeta = preData?.[1]?.split("|") ?? [];
+    try {
+      const { setSelectedItems } = useSelectStore.getState();
+      setSelectedItems([]);
+    } catch (err) {
+      console.warn("No se pudo limpiar Zustand:", err);
+    }
 
-      if (
-        !result ||
-        result.trim() === "" ||
-        !info.length ||
-        info[0].trim() === ""
-      ) {
-        setDatasets({});
-
-        try {
-          const { setSelectedItems } = useSelectStore.getState();
-          setSelectedItems([]);
-        } catch (err) {
-          console.warn("No se pudo limpiar Zustand:", err);
-        }
-
-        elementosRef.current.forEach((el) => {
-          if (!el) return;
-          if (
-            el.tagName === "INPUT" ||
-            el.tagName === "TEXTAREA" ||
-            el.tagName === "SELECT"
-          ) {
-            if (el.type === "checkbox" || el.type === "radio") {
-              el.checked = false;
-            } else {
-              el.value = "";
-            }
-            el.dataset.value = "";
-            el.dataset.valor = "";
-          }
-          if (el && el.tagName === "SELECT") {
-            while (el.options.length > 0) {
-              el.remove(0);
-            }
-            setRefreshKey((k) => k + 1);
-          }
-        });
-
-        Object.keys(mapaListas).forEach((key) => (mapaListas[key] = []));
-        setIsEdit(false);
-        return;
+    elementosRef.current.forEach((el) => {
+      if (!el) return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) {
+        if (el.type === "checkbox" || el.type === "radio") el.checked = false;
+        else el.value = "";
+        el.dataset.value = "";
+        el.dataset.valor = "";
       }
-      listaAuxRef.current = info?.[1] + "|" + info?.[info.length - 1];
+      if (el && el.tagName === "SELECT")
+        while (el.options.length > 0) el.remove(0);
+    });
 
-      const informacion = infoMeta.map((meta, idx) => ({
-        data: info[idx] ?? "",
-        metadata: (meta ?? "").split("*"),
-      }));
+    Object.keys(mapaListas).forEach((key) => (mapaListas[key] = []));
+    setRefreshKey((k) => k + 1);
+  };
 
-      const campo100 = informacion.find((item) => item.metadata?.[5] === "100");
-      if (campo100) {
-        const campo = campo100.metadata[0];
-        const valor = campo100.data;
+  const handleBuscarClick = async () => {
+    setForcedOption({});
+    setOptionFlag({});
+    setDatasets({});
+
+    if (!inputRef.current) return;
+    const valorParametro = `zz|${inputRef.current.value}`;
+    const result = await runFetch(
+      `${API_RESULT_LISTAR}Param?dato=${encodeURIComponent(valorParametro)}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "text/plain",
+          "Content-Type": "text/plain",
+        },
+      },
+    );
+    if (result.startsWith("error")) {
+      limpiarCamposYStores();
+      return;
+    }
+    // const preData = result.split("~");
+    const preData = typeof result === "string" ? result.split("~") : [];
+    const info = preData?.[0]?.split("|") ?? [];
+    const infoMeta = preData?.[1]?.split("|") ?? [];
+    const dataAyudas = preData?.slice(3)?.join("~");
+
+    if (
+      !result ||
+      result.trim() === "" ||
+      !info.length ||
+      info[0].trim() === ""
+    ) {
+      limpiarCamposYStores();
+      return;
+    }
+
+    const informacion = infoMeta.map((meta, idx) => ({
+      data: info[idx] ?? "",
+      metadata: (meta ?? "").split("*"),
+    }));
+
+    informacion
+      .filter((item) => item.metadata?.[5] === "100")
+      .forEach((item) => {
+        const campo = item.metadata[0];
+        const valor = item.data;
 
         if (valor && valor.trim() !== "") {
-          const hidden100 = elementosRef.current.find(
-            (el) => el?.type === "hidden" && el.dataset.campo === campo,
-          );
-          if (hidden100) {
-            hidden100.value = valor;
-            hidden100.dataset.value = valor;
-          }
-          setIsEdit(true);
-        }
-      }
-
-      informacion
-        .filter((item) => item.metadata?.[5] !== "100")
-        .forEach((item) => {
-          const campo = item.metadata[0];
-          const valor = item.data;
-          const el = elementosRef.current.find(
-            (ref) => ref?.dataset?.campo === campo,
-          );
-          if (el) {
-            if (
-              el.tagName === "INPUT" ||
-              el.tagName === "TEXTAREA" ||
-              el.tagName === "SELECT"
-            ) {
+          elementosRef.current.forEach((el) => {
+            if (el?.type === "hidden" && el.dataset.campo === campo) {
               el.value = valor;
               el.dataset.value = valor;
-              el.dataset.valor = valor;
-              el.dispatchEvent(new Event("input", { bubbles: true }));
-              setDatasets((prev) => ({
-                ...prev,
-                [campo]: { value: valor, valor: valor, item: item ?? "" },
-              }));
-
-              const typeCode = item.metadata?.[5];
-              const popupTipo = item.metadata?.[6];
-              if (
-                typeCode === "151" &&
-                popupTipo === "0" &&
-                listaAuxRef.current !== ""
-              ) {
-                const partes = listaAuxRef.current.split("|");
-                const listaFormateada =
-                  partes.length > 1 ? [`${partes[0]}|${partes[1]}`] : [];
-                setDatasets((prev) => ({
-                  ...prev,
-                  [campo]: {
-                    ...(prev[campo] ?? {}),
-                    listaAux: listaFormateada,
-                  },
-                }));
-              }
             }
-          }
-        });
+          });
+          setIsEdit(true);
+        }
+      });
+
+    informacion
+      .filter((item) => item.metadata?.[5] !== "100")
+      .forEach((item) => {
+        const campo = item.metadata[0];
+        const valor = item.data;
+        const el = elementosRef.current.find(
+          (ref) => ref?.dataset?.campo === campo,
+        );
+        if (!el) return;
+        if (el.tagName === "SELECT") {
+          const valorTrimmed = String(valor).trim();
+          const aplicarValor = () => {
+            const normalizar = (v) =>
+              String(v ?? "")
+                .trim()
+                .toUpperCase();
+            const opciones = Array.from(el.options || []);
+            const opcion = opciones.find(
+              (opt) => normalizar(opt.value) === normalizar(valor),
+            );
+            if (opcion) {
+              const index = opciones.indexOf(opcion);
+              opciones.forEach((opt) => (opt.selected = false));
+              opcion.selected = true;
+              el.selectedIndex = index;
+              el.value = opcion.value;
+              el.dataset.value = opcion.value;
+              el.dataset.valor = opcion.value;
+              if (!el.dataset.valor || el.dataset.valor === "")
+                el.dataset.valor = el.dataset.value;
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+              return true;
+            }
+            return false;
+          };
+          const estabaDeshabilitado = el.disabled;
+          if (estabaDeshabilitado) el.disabled = false;
+          aplicarValor();
+
+          setDatasets((prev) => ({
+            ...prev,
+            [item.metadata[6]]: {
+              value: valorTrimmed,
+              valor: valorTrimmed,
+              item,
+            },
+          }));
+        } else if (["INPUT", "TEXTAREA"].includes(el.tagName)) {
+          el.value = valor;
+          el.dataset.value = valor;
+          el.dataset.valor = valor;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+
+          setDatasets((prev) => ({
+            ...prev,
+            [item.metadata[6]]: { value: valor, valor: valor, item },
+          }));
+        }
+      });
+
+    if (dataAyudas) {
+      const ayudas = dataAyudas.split("^");
+      const nroReg = ayudas.length;
+
+      for (let i = 0; i < nroReg; i++) {
+        const lsPlacas = ayudas[i].split("~");
+        const nro = lsPlacas.length - 1;
+        const item = lsPlacas[0];
+        const dataZustand = lsPlacas[nro]?.split("|") ?? [];
+        const elemento = elementosRef.current.find(
+          (el) => el?.dataset?.item === item,
+        );
+        if (elemento && elemento.tagName === "SELECT") {
+          setForcedOption((prev) => ({
+            ...prev,
+            [item]: {
+              value: dataZustand[0],
+              label: dataZustand[1],
+            },
+          }));
+          setOptionFlag((prev) => ({
+            ...prev,
+            [item]: 1,
+          }));
+        }
+        const { setSelectedItems } = useSelectStore.getState();
+        setSelectedItems([dataZustand]);
+        handlePopupClose(item);
+      }
     }
+    setTimeout(() => {
+      elementosRef.current.forEach((el) => {
+        if (el && el.dataset) {
+          el.dataset.valor = el.dataset.value;
+        }
+      });
+    }, 100);
   };
 
   const handleEnvio = useCallback(async () => {
@@ -198,7 +256,6 @@ const ProgExtraordinaria = () => {
         }
       }
     });
-
     const dataEnviar =
       usuario.trim() +
       "~" +
@@ -224,19 +281,17 @@ const ProgExtraordinaria = () => {
         setIsEdit(true);
 
         console.log("Respuesta Grabacion Datos Datos:", result);
-        // if (result.trim() !== "") {
-        //   const elPK = elementosRef.current.find(
-        //     (el) => el?.dataset?.item === "10",
-        //   );
-        //   elPK.dataset.value = result.trim();
+        if (result.trim() !== "") {
+          const elPK = elementosRef.current.find(
+            (el) => el?.dataset?.item === "10",
+          );
+          elPK.dataset.value = result.trim();
+        }
 
-        //   console.log("Elemento Encontrado y asignado:", elPK);
-        // }
-
-        // elementosRef.current.forEach((el) => {
-        //   if (!el) return;
-        //   el.dataset.valor = el.dataset.value ?? "";
-        // });
+        elementosRef.current.forEach((el) => {
+          if (!el) return;
+          el.dataset.valor = el.dataset.value ?? "";
+        });
       }
     } catch (err) {
       console.error(err);
@@ -343,7 +398,7 @@ const ProgExtraordinaria = () => {
 
     setDatasets((prev) => ({
       ...prev,
-      [campo]: { value, valor, item },
+      [item]: { value, valor, item },
     }));
   };
 
@@ -369,7 +424,9 @@ const ProgExtraordinaria = () => {
     if (!selectedItems || selectedItems.length === 0) return;
     const elementoSeleccionado = selectedItems[0];
     const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
+
     // console.log("zustand:", elementoSeleccionado);
+    // console.log("listas a Actulizar: ", listas);
 
     setTimeout(() => {
       const camposActualizar = listas.map((str) => {
@@ -454,6 +511,7 @@ const ProgExtraordinaria = () => {
                     metadata?.[4] === "" ? maxLength : Number(metadata[4]);
 
                   const colSpanMap = {
+                    "-1": "w-1/2",
                     1: "col-span-1",
                     2: "col-span-2",
                     3: "col-span-3",
@@ -520,6 +578,15 @@ const ProgExtraordinaria = () => {
                                 ancho: metadata?.[13],
                                 isFilter:
                                   metadata[0] === "1.11" ? datoModelos : "",
+                                forcedOption:
+                                  forcedOption?.[metadata[6]] ?? null,
+                                optionFlag: optionFlag?.[metadata[6]] ?? null,
+                                setOptionFlag: (value) => {
+                                  setOptionFlag((prev) => ({
+                                    ...prev,
+                                    [metadata[6]]: value,
+                                  }));
+                                },
                               }
                             : {
                                 defaultValue: datos.data,
@@ -559,13 +626,6 @@ const ProgExtraordinaria = () => {
       )}
 
       <div className="mt-8 mb-2">
-        <CustomElement
-          typeCode={120}
-          onClick={() => handleClick()}
-          {...(isSubmitting ? { disabled: true } : {})}
-        >
-          {isSubmitting ? "Guardando..." : "GUARDAR"}
-        </CustomElement>
         {mensajeError && (
           <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">
             {mensajeError}
@@ -579,10 +639,16 @@ const ProgExtraordinaria = () => {
                 : "bg-red-400 text-white animate-bounce"
             }`}
           >
-            listaFormateada
             {mensajeToast}
           </div>
         )}
+        <CustomElement
+          typeCode={120}
+          onClick={() => handleClick()}
+          {...(isSubmitting ? { disabled: true } : {})}
+        >
+          {isSubmitting ? "Guardando..." : "GUARDAR"}
+        </CustomElement>
       </div>
     </>
   );
