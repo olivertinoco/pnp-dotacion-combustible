@@ -1,10 +1,11 @@
-import { useState, useEffect, forwardRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 import { BaseTablaMatriz } from "./BaseTablaMatriz";
 import PopupBusqueda from "./PopupBusqueda";
 import { useSelectStore } from "../store/selectStore";
 
 const CustomElement = forwardRef(
   ({ typeCode, dataAttrs = {}, options: optionsProp = [], ...props }, ref) => {
+    const internalSelectRef = useRef(null);
     const [showPopup, setShowPopup] = useState(false);
     const [overrideOption, setOverrideOption] = useState(null);
     const [showPopupEspecial, setShowPopupEspecial] = useState(false);
@@ -393,6 +394,13 @@ const CustomElement = forwardRef(
         }
       }, [hardcodedOption]);
 
+      useEffect(() => {
+        if (!ref) return;
+        if (typeof ref === "function") {
+          ref(internalSelectRef.current);
+        }
+      }, [ref]);
+
       const selectStyle =
         unaLinea === "1" ? { height: "2.7rem" } : { height: "10rem" };
 
@@ -427,7 +435,7 @@ const CustomElement = forwardRef(
             {restProps.required && <span className="text-red-500"> *</span>}
           </label>
           <select
-            ref={ref}
+            ref={ref} //internalSelectRef
             multiple
             readOnly
             disabled
@@ -438,19 +446,29 @@ const CustomElement = forwardRef(
             }
             onChange={handleChange}
             style={selectStyle}
-            className="block w-full rounded-md border  px-3 py-2 shadow-sm opacity-50 cursor-not-allowed bg-gray-200 text-gray-500"
+            className="block w-full rounded-md border  px-3 py-2 shadow-sm opacity-50 cursor-not-allowed bg-gray-200 text-gray-700 font-bold"
           >
-            {usarHardcoded && hardcodedOption ? (
+            {restProps.forcedOption && restProps?.optionFlag === 1 ? (
               <option
+                key={restProps.forcedOption.value}
+                value={restProps.forcedOption.value}
+                style={{ fontWeight: "bold", color: "black" }}
+              >
+                {restProps.forcedOption.label}
+              </option>
+            ) : usarHardcoded && hardcodedOption ? (
+              <option
+                key={hardcodedOption.value}
                 value={hardcodedOption.value}
-                style={{ fontWeight: "bold", color: "blue" }}
+                style={{ fontWeight: "bold", color: "black" }}
               >
                 {hardcodedOption.label}
               </option>
             ) : displayOption ? (
               <option
+                key={displayOption.value}
                 value={displayOption.value}
-                style={{ fontWeight: "bold" }}
+                style={{ fontWeight: "bold", color: "black" }}
               >
                 {displayOption.label}
               </option>
@@ -545,23 +563,26 @@ const CustomElement = forwardRef(
                 const { selectedItems: currentItems } =
                   useSelectStore.getState();
                 setShowPopupEspecial(false);
-                if (currentItems && currentItems.length > 0) {
-                  const fila = currentItems[0];
-                  const valor = fila[0] ?? "";
-                  const label = fila[1] ?? "";
-                  setUsarHardcoded(true);
-                  setHardcodedOption({
-                    value: valor ?? "",
-                    label: label ?? "",
-                  });
-                  if (ref?.current) {
-                    ref.current.dataset.value = valor ?? "";
-                    ref.current.dataset.label = label ?? "";
-                    ref.current.value = valor ?? "";
-                    setDataValue(valor ?? "");
+                setTimeout(() => {
+                  if (currentItems && currentItems.length > 0) {
+                    const fila = currentItems[0];
+                    const valor = fila[0] ?? "";
+                    const label = fila[1] ?? "";
+                    restProps.setOptionFlag(0);
+                    setUsarHardcoded(true);
+                    setHardcodedOption({
+                      value: valor ?? "",
+                      label: label ?? "",
+                    });
+                    if (ref?.current) {
+                      ref.current.dataset.value = valor ?? "";
+                      ref.current.dataset.label = label ?? "";
+                      ref.current.value = valor ?? "";
+                      setDataValue(valor ?? "");
+                    }
+                    props.onPopupClose?.("cerrar", null);
                   }
-                  props.onPopupClose?.("cerrar", null);
-                }
+                }, 0);
               }}
               etiqueta={etiqueta}
               ancho={ancho}
