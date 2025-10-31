@@ -20,4 +20,11 @@
     <None Include=".env" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="pnp-dotacion-combustible/**" />
+    <Content Remove="pnp-dotacion-combustible/**" />
+    <EmbeddedResource Remove="pnp-dotacion-combustible/**" />
+    <None Remove="pnp-dotacion-combustible/**" />
+  </ItemGroup>
+
 </Project>

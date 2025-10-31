@@ -5,6 +5,7 @@ import useLazyFetch from "../hooks/useLazyFetch";
 import useValidationFields from "../hooks/useValidationFields";
 import CustomElement from "../components/CustomElement";
 import { useSelectStore } from "../store/selectStore";
+import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
@@ -22,6 +23,7 @@ const ProgExtraordinaria = () => {
   const closeChildRef = useRef(closeChild);
   const [forcedOption, setForcedOption] = useState({});
   const [optionFlag, setOptionFlag] = useState({});
+  const [configTable, setConfigTable] = useState({});
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -51,6 +53,7 @@ const ProgExtraordinaria = () => {
     setDatasets({});
     setForcedOption({});
     setOptionFlag({});
+    setConfigTable({});
     setIsEdit(false);
 
     try {
@@ -80,6 +83,7 @@ const ProgExtraordinaria = () => {
     setForcedOption({});
     setOptionFlag({});
     setDatasets({});
+    setConfigTable({});
 
     if (!inputRef.current) return;
     const valorParametro = `zz|${inputRef.current.value}`;
@@ -196,7 +200,20 @@ const ProgExtraordinaria = () => {
       });
 
     if (dataAyudas) {
-      const ayudas = dataAyudas.split("^");
+      const ayudasData = dataAyudas.split("^");
+
+      const listaDetalle01 = ayudasData
+        .filter((reg) => reg.split("~")[0] === "741")
+        .flatMap((reg) => reg.split("~").slice(1));
+
+      setConfigTable({
+        title: "PROGRAMACION DE RUTAS:",
+        isPaginar: false,
+        listaDatos: listaDetalle01,
+        offsetColumnas: 11,
+      });
+
+      const ayudas = ayudasData.filter((reg) => reg.split("~")[0] !== "741");
       const nroReg = ayudas.length;
 
       for (let i = 0; i < nroReg; i++) {
@@ -310,6 +327,14 @@ const ProgExtraordinaria = () => {
       handleEnvio();
     }
   }, [esValido, handleEnvio]);
+
+  // const { selectedItems } = useSelectStore((state) => state.selectedItems);
+  // console.log("Fila seleccionada:", selectedItems);
+
+  // setTimeout(() => {
+  //   const { selectedItems } = useSelectStore.getState();
+  //   console.log("Fila seleccionada:", selectedItems[0]);
+  // }, 100);
 
   const preData = typeof data?.[0] === "string" ? data?.[0]?.split("~") : [];
   const info = preData?.[0]?.split("|") ?? [];
@@ -462,10 +487,19 @@ const ProgExtraordinaria = () => {
     }, 50);
   };
 
+  const handleRadioClickEvento = (fila) => {
+    console.log("SALIDA fila seleccion:", fila);
+  };
+
+  const handleRutaClick = () => {
+    alert("Agregando elemento...");
+  };
+
   const urlMap = {
     990: "/Home/TraerDatosProgVehiculoAyudas",
     991: "/Home/TraerDatosProgUnidadesAyudas",
     992: "/Home/TraerDatosProgCIPAyudas",
+    993: "/Home/TraerDatosProgUnidadesAyudas",
   };
 
   return (
@@ -625,6 +659,26 @@ const ProgExtraordinaria = () => {
           ),
       )}
 
+      <div className="mt-8 mb-2">
+        <CustomElement
+          typeCode={120}
+          onClick={() => handleRutaClick()}
+          style={{ width: "50%" }}
+        >
+          AGREGAR RUTA
+        </CustomElement>
+        {(!configTable?.listaDatos || configTable?.listaDatos.length === 0) && (
+          <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
+            PROGRAMACION DE RUTAS
+          </h2>
+        )}
+        {configTable?.listaDatos && configTable?.listaDatos.length > 0 && (
+          <BaseTablaMatriz2
+            configTable={configTable}
+            handleRadioClick={handleRadioClickEvento}
+          />
+        )}
+      </div>
       <div className="mt-8 mb-2">
         {mensajeError && (
           <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">

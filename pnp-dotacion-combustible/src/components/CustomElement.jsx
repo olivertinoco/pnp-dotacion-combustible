@@ -749,7 +749,7 @@ const CustomElement = forwardRef(
     }
 
     if (Tag === "button") {
-      const { etiqueta, children, onClick, ...restProps } = props;
+      const { etiqueta, children, onClick, style = {}, ...restProps } = props;
       return (
         <div className="block w-full">
           {etiqueta && (
@@ -762,6 +762,7 @@ const CustomElement = forwardRef(
             {...datasetProps}
             {...restProps}
             onClick={onClick}
+            style={style}
             className={`px-4 py-2 rounded-md bg-indigo-500 text-white shadow-sm hover:bg-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-400 ${restProps.disabled ? "opacity-50 cursor-not-allowed bg-gray-300 hover:bg-gray-300" : ""}`}
           >
             {children}
