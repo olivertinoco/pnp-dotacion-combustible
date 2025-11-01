@@ -24,6 +24,8 @@ const ProgExtraordinaria = () => {
   const [forcedOption, setForcedOption] = useState({});
   const [optionFlag, setOptionFlag] = useState({});
   const [configTable, setConfigTable] = useState({});
+  const [usarHardcodedExternoMap, setUsarHardcodedExternoMap] = useState({});
+  const [filaSeleccionada, setFilaSeleccionada] = useState([]);
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -488,11 +490,91 @@ const ProgExtraordinaria = () => {
   };
 
   const handleRadioClickEvento = (fila) => {
-    console.log("SALIDA fila seleccion:", fila);
+    setFilaSeleccionada(fila);
+    const mapping = [
+      { item: "4", index: 3 },
+      { item: "30", index: 8 },
+      { item: "31", index: 9 },
+      { item: "32", index: 10 },
+      { item: "34", index: 5 },
+      { item: "35", index: 6 },
+    ];
+    const item = "993";
+    const elemento = elementosRef.current.find(
+      (el) => el?.dataset?.item === item,
+    );
+    if (fila) {
+      if (elemento && elemento.tagName === "SELECT") {
+        elemento.dataset.value = fila[4];
+        setForcedOption((prev) => ({
+          ...prev,
+          [item]: {
+            value: fila[4],
+            label: fila[11],
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item]: 1,
+        }));
+      }
+      mapping.forEach(({ item, index }) => {
+        elementosRef.current.forEach((el) => {
+          if (el?.dataset?.item === item) {
+            el.dataset.value = fila[index];
+            el.value = fila[index];
+          }
+        });
+      });
+      setUsarHardcodedExternoMap((prev) => ({
+        ...prev,
+        [item]: true,
+      }));
+    } else {
+      if (elemento && elemento.tagName === "SELECT") {
+        elemento.dataset.value = "";
+        setForcedOption((prev) => ({
+          ...prev,
+          [item]: {
+            value: "",
+            label: "",
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item]: 0,
+        }));
+      }
+      mapping.forEach(({ item }) => {
+        elementosRef.current.forEach((el) => {
+          if (el?.dataset?.item === item) {
+            el.dataset.value = "";
+            el.value = "";
+          }
+        });
+      });
+      setUsarHardcodedExternoMap((prev) => ({
+        ...prev,
+        [item]: false,
+      }));
+    }
   };
 
   const handleRutaClick = () => {
-    alert("Agregando elemento...");
+    if (usarHardcodedExternoMap?.["993"]) {
+      console.log("fila seleccionada:", filaSeleccionada);
+      const mapping = [
+        { item: "993", index: [4, 11] },
+        { item: "4", index: [3, 12] },
+        { item: "30", index: 8 },
+        { item: "31", index: 9 },
+        { item: "32", index: 10 },
+        { item: "34", index: 5 },
+        { item: "35", index: 6 },
+      ];
+    } else {
+      console.log("ruta nueva:");
+    }
   };
 
   const urlMap = {
@@ -621,6 +703,8 @@ const ProgExtraordinaria = () => {
                                     [metadata[6]]: value,
                                   }));
                                 },
+                                usarHardcodedExterno:
+                                  usarHardcodedExternoMap[metadata[6]] ?? false,
                               }
                             : {
                                 defaultValue: datos.data,
@@ -664,8 +748,11 @@ const ProgExtraordinaria = () => {
           typeCode={120}
           onClick={() => handleRutaClick()}
           style={{ width: "50%" }}
+          className="font-bold text-white text-lg border border-gray-300 rounded shadow-md px-3 py-1"
         >
-          AGREGAR RUTA
+          {usarHardcodedExternoMap?.["993"]
+            ? "MODIFICANDO LA RUTA"
+            : "AGREGAR RUTA NUEVA"}
         </CustomElement>
         {(!configTable?.listaDatos || configTable?.listaDatos.length === 0) && (
           <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">

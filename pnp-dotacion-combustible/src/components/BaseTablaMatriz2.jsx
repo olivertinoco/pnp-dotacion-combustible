@@ -136,7 +136,8 @@ export const BaseTablaMatriz2 = ({
         if (newValue !== null) {
           const filaSeleccionada = datosTabla[newValue];
           if (filaSeleccionada) {
-            handleRadioClick?.(filaSeleccionada.completa);
+            const completaConIndex = [...filaSeleccionada.completa, newValue];
+            handleRadioClick?.(completaConIndex);
           } else {
             handleRadioClick?.(null);
           }

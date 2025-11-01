@@ -257,6 +257,7 @@ const CustomElement = forwardRef(
         offsetColumnas,
         ancho,
         isFilter,
+        usarHardcodedExterno,
         ...restProps
       } = props;
 
@@ -400,6 +401,12 @@ const CustomElement = forwardRef(
           ref(internalSelectRef.current);
         }
       }, [ref]);
+
+      useEffect(() => {
+        if (typeof usarHardcodedExterno === "boolean") {
+          setUsarHardcoded(usarHardcodedExterno);
+        }
+      }, [usarHardcodedExterno]);
 
       const selectStyle =
         unaLinea === "1" ? { height: "2.7rem" } : { height: "10rem" };
