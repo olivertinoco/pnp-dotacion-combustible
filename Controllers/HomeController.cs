@@ -27,7 +27,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_listaDotacionCombustible");
             return rpta;
         }
@@ -43,7 +43,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_listaOperatividadVehiculo");
             return rpta;
         }
@@ -64,7 +64,7 @@ public class HomeController : Controller
             string clave = Request.Form["data2"].ToString();
             string usuario = $"{user}|{clave}";
 
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_loginXmenus", "@data", usuario);
             if (rpta == "")
             {
@@ -86,7 +86,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "LOC");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_listaGeometrias");
             return rpta;
         }
@@ -103,7 +103,7 @@ public class HomeController : Controller
         try
         {
             Response.ContentType = "application/json";
-            var odaSQL = new daSQL(_configuration, "LOC");
+            var odaSQL = new daSQL(_configuration, "PRUMAX");
             await odaSQL.ejecutarComandoStreamAsync("dbo.usp_listaGeometrias", Response.Body);
             return new EmptyResult(); // ya escribimos todo en Response.Body
         }
@@ -121,7 +121,7 @@ public class HomeController : Controller
         {
             string rpta = "";
             string datos = Request.Form["data"].ToString();
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_crud_generico01", "@data", datos);
             return rpta;
         }
@@ -138,7 +138,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_crud_prog_extraOrdinaria", "@data", "0");
             return rpta;
         }
@@ -155,7 +155,7 @@ public class HomeController : Controller
         try
         {
             string rpta = "";
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_crud_prog_extraOrdinaria", "@data", dato);
             return rpta;
         }
@@ -173,7 +173,7 @@ public class HomeController : Controller
         {
             string rpta = "";
             string datos = Request.Form["data"].ToString();
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_buscar_vehiculo_programacion", "@data", datos);
             return rpta;
         }
@@ -191,7 +191,7 @@ public class HomeController : Controller
         {
             string rpta = "";
             string datos = Request.Form["data"].ToString();
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_buscar_unidad_programacion", "@data", datos);
             return rpta;
         }
@@ -209,7 +209,7 @@ public class HomeController : Controller
         {
             string rpta = "";
             string datos = Request.Form["data"].ToString();
-            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            daSQL odaSQL = new daSQL(_configuration, "PRUMAX");
             rpta = odaSQL.ejecutarComando("dbo.usp_buscar_CIP_programacion", "@data", datos);
             return rpta;
         }

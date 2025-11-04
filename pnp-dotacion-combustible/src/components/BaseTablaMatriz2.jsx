@@ -66,14 +66,14 @@ export const BaseTablaMatriz2 = ({
   handleRadioClick,
   onSelect,
 }) => {
-  const { title, isPaginar, listaDatos, offsetColumnas } = configTable;
+  const { title, isPaginar, listaDatos, offsetColumnas, index } = configTable;
 
   const rowsOriginal = listaDatos;
+  const [selectedRadio, setSelectedRadio] = useState(null);
 
   const dataRows = useMemo(() => {
     return listaDatos && listaDatos.length > 2 ? listaDatos.slice(2) : [];
   }, [listaDatos]);
-  const [selectedRadio, setSelectedRadio] = useState(null);
 
   // .... inicio de paginacion ....
   const [page, setPage] = useState(1);

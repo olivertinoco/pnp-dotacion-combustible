@@ -51,6 +51,15 @@ const ProgExtraordinaria = () => {
     }
   }, []);
 
+  const hashString = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return hash.toString();
+  };
+
   const limpiarCamposYStores = () => {
     setDatasets({});
     setForcedOption({});
@@ -208,11 +217,14 @@ const ProgExtraordinaria = () => {
         .filter((reg) => reg.split("~")[0] === "741")
         .flatMap((reg) => reg.split("~").slice(1));
 
+      const hashArray = listaDetalle01.map(hashString);
+
       setConfigTable({
         title: "PROGRAMACION DE RUTAS:",
         isPaginar: false,
         listaDatos: listaDetalle01,
         offsetColumnas: 11,
+        hash: hashArray,
       });
 
       const ayudas = ayudasData.filter((reg) => reg.split("~")[0] !== "741");
@@ -452,9 +464,6 @@ const ProgExtraordinaria = () => {
     const elementoSeleccionado = selectedItems[0];
     const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
 
-    // console.log("zustand:", elementoSeleccionado);
-    // console.log("listas a Actulizar: ", listas);
-
     setTimeout(() => {
       const camposActualizar = listas.map((str) => {
         const [item, indice] = str.split("|");
@@ -562,16 +571,60 @@ const ProgExtraordinaria = () => {
 
   const handleRutaClick = () => {
     if (usarHardcodedExternoMap?.["993"]) {
-      console.log("fila seleccionada:", filaSeleccionada);
+      const nuevaFila = [];
       const mapping = [
         { item: "993", index: [4, 11] },
         { item: "4", index: [3, 12] },
         { item: "30", index: 8 },
         { item: "31", index: 9 },
         { item: "32", index: 10 },
-        { item: "34", index: 5 },
+        { item: "34", index: [5, 13] },
         { item: "35", index: 6 },
       ];
+      mapping.forEach(({ item, index }) => {
+        elementosRef.current.forEach((el) => {
+          if (el?.dataset?.item === item) {
+            if (el && el.tagName === "SELECT") {
+              const [valorIndex, textoIndex] = index;
+              nuevaFila[valorIndex] = el.dataset.value;
+              filaSeleccionada[valorIndex] = nuevaFila[valorIndex];
+              let selectedOption = el.options[el.selectedIndex];
+              if (!selectedOption && el.options.length > 0) {
+                selectedOption = el.options[0];
+              }
+              if (selectedOption) {
+                nuevaFila[textoIndex] = selectedOption.textContent.trim();
+                filaSeleccionada[textoIndex] = nuevaFila[textoIndex];
+              } else {
+                nuevaFila[textoIndex] = "";
+                filaSeleccionada[textoIndex] = nuevaFila[textoIndex];
+              }
+            } else {
+              const indices = Array.isArray(index) ? index : [index];
+              indices.forEach((i) => {
+                nuevaFila[i] = el.dataset.value;
+                filaSeleccionada[i] = nuevaFila[i];
+              });
+            }
+          }
+        });
+      });
+
+      const posicion = Number(filaSeleccionada.slice(-1)[0]) + 2;
+      if (!isNaN(posicion)) {
+        const nuevaFilaSeleccionada = filaSeleccionada.slice(0, -1).join("|");
+        const filaHash = hashString(nuevaFilaSeleccionada);
+        const dataHash = configTable?.hash[posicion];
+        if (filaHash !== dataHash) {
+          const nuevaLista = [...(configTable.listaDatos || [])];
+          nuevaLista[posicion] = nuevaFilaSeleccionada;
+          setConfigTable({
+            ...configTable,
+            listaDatos: nuevaLista,
+          });
+          handleRadioClickEvento(null);
+        }
+      }
     } else {
       console.log("ruta nueva:");
     }
