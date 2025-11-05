@@ -16,6 +16,9 @@ const Fila = memo(
     onDoubleClick,
     selectedRadio,
     handleRadioClick,
+    selectedChecked,
+    handleCheckDelete,
+    listaLength,
   }) => (
     <div
       data-row-index={virtualRow.index}
@@ -45,7 +48,7 @@ const Fila = memo(
           name="editarFila"
           value={virtualRow.index}
           checked={selectedRadio === virtualRow.index}
-          onChange={() => console.log("")}
+          onChange={() => {}}
           onClick={() => handleRadioClick(virtualRow.index)}
           className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
         />
@@ -54,6 +57,12 @@ const Fila = memo(
         <input
           type="checkbox"
           name={`eliminarFila-${virtualRow.index}`}
+          value={virtualRow.index}
+          checked={
+            selectedChecked.includes(virtualRow.index) &&
+            virtualRow.index < listaLength
+          }
+          onClick={() => handleCheckDelete(virtualRow.index)}
           className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -64,12 +73,14 @@ const Fila = memo(
 export const BaseTablaMatriz2 = ({
   configTable,
   handleRadioClick,
+  handleCheckDelete,
   onSelect,
 }) => {
-  const { title, isPaginar, listaDatos, offsetColumnas, index } = configTable;
+  const { title, isPaginar, listaDatos, offsetColumnas } = configTable;
 
   const rowsOriginal = listaDatos;
   const [selectedRadio, setSelectedRadio] = useState(null);
+  const [selectedChecked, setSelectedChecked] = useState([]);
 
   const dataRows = useMemo(() => {
     return listaDatos && listaDatos.length > 2 ? listaDatos.slice(2) : [];
@@ -134,6 +145,9 @@ export const BaseTablaMatriz2 = ({
       setSelectedRadio((prev) => {
         const newValue = prev === index ? null : index;
         if (newValue !== null) {
+          setSelectedChecked((prev) => prev.filter((i) => i !== index));
+        }
+        if (newValue !== null) {
           const filaSeleccionada = datosTabla[newValue];
           if (filaSeleccionada) {
             const completaConIndex = [...filaSeleccionada.completa, newValue];
@@ -148,6 +162,35 @@ export const BaseTablaMatriz2 = ({
       });
     },
     [datosTabla, handleRadioClick],
+  );
+
+  const handleCheckDeleteInterno = useCallback(
+    (index) => {
+      setSelectedChecked((prev) => {
+        const already = prev.includes(index);
+        const next = already
+          ? prev.filter((i) => i !== index)
+          : [...prev, index];
+        // Si marcamos el checkbox para 'index' y ese index estaba seleccionado por radio, quitar el radio
+        if (!already && selectedRadio === index) {
+          setSelectedRadio(null);
+          // also inform parent radio cleared
+          handleRadioClick?.(null);
+        }
+        // Propaga al padre lista de filas seleccionadas para eliminar (array de completas)
+        if (next.length > 0) {
+          const seleccionadas = next
+            .map((i) => datosTabla[i])
+            .filter(Boolean)
+            .map((d, i) => [...d.completa, next[i]]);
+          handleCheckDelete?.(seleccionadas);
+        } else {
+          handleCheckDelete?.(null);
+        }
+        return next;
+      });
+    },
+    [datosTabla, handleCheckDelete, selectedRadio, handleRadioClick],
   );
 
   const {
@@ -317,6 +360,8 @@ export const BaseTablaMatriz2 = ({
                 cabeceraFiltrada={cabeceraFiltrada}
                 selectedRadio={selectedRadio}
                 handleRadioClick={handleRadioClickInterno}
+                selectedChecked={selectedChecked}
+                handleCheckDelete={handleCheckDeleteInterno}
                 onClick={() => {
                   setSelectedIndex(virtualRow.index);
                   rowVirtualizer.scrollToIndex(virtualRow.index, {
@@ -330,6 +375,7 @@ export const BaseTablaMatriz2 = ({
                     onSelect(filaItem.completa);
                   }
                 }}
+                listaLength={listaDatos.length}
               />
             );
           })}

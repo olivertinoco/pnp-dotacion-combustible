@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
@@ -26,6 +26,7 @@ const ProgExtraordinaria = () => {
   const [configTable, setConfigTable] = useState({});
   const [usarHardcodedExternoMap, setUsarHardcodedExternoMap] = useState({});
   const [filaSeleccionada, setFilaSeleccionada] = useState([]);
+  const [keyProgRuta, setKeyProgRuta] = useState("");
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -213,10 +214,12 @@ const ProgExtraordinaria = () => {
     if (dataAyudas) {
       const ayudasData = dataAyudas.split("^");
 
-      const listaDetalle01 = ayudasData
+      const listaDetallekey = ayudasData
         .filter((reg) => reg.split("~")[0] === "741")
         .flatMap((reg) => reg.split("~").slice(1));
 
+      setKeyProgRuta(listaDetallekey[0]);
+      const listaDetalle01 = listaDetallekey.slice(1);
       const hashArray = listaDetalle01.map(hashString);
 
       setConfigTable({
@@ -378,11 +381,20 @@ const ProgExtraordinaria = () => {
 
   const listasData = (data ?? []).slice(1);
 
-  const mapaListas = (listasData ?? []).reduce((acc, entry) => {
-    const [itemKey, ...opciones] = entry.split("~");
-    acc[itemKey] = opciones;
-    return acc;
-  }, {});
+  const mapaListas = useMemo(() => {
+    return (listasData ?? []).reduce((acc, entry) => {
+      const [itemKey, ...opciones] = entry.split("~");
+      acc[itemKey] = opciones;
+      return acc;
+    }, {});
+  }, [listasData]);
+
+  useEffect(() => {
+    const nuevoValor = mapaListas?.[741]?.[0];
+    if (nuevoValor) {
+      setKeyProgRuta(nuevoValor);
+    }
+  }, [mapaListas]);
 
   const grupos = infoTitleGrupo
     .map((titulo) => {
@@ -541,7 +553,9 @@ const ProgExtraordinaria = () => {
       }));
     } else {
       if (elemento && elemento.tagName === "SELECT") {
-        elemento.dataset.value = "";
+        setTimeout(() => {
+          elemento.dataset.value = "";
+        }, 1000);
         setForcedOption((prev) => ({
           ...prev,
           [item]: {
@@ -622,12 +636,106 @@ const ProgExtraordinaria = () => {
             ...configTable,
             listaDatos: nuevaLista,
           });
-          handleRadioClickEvento(null);
         }
       }
     } else {
-      console.log("ruta nueva:");
+      const nuevaFila = [];
+      const mapping = [
+        { item: "993", index: [4, 11] },
+        { item: "4", index: [3, 12] },
+        { item: "30", index: 8 },
+        { item: "31", index: 9 },
+        { item: "32", index: 10 },
+        { item: "34", index: [5, 13] },
+        { item: "35", index: 6 },
+      ];
+      mapping.forEach(({ item, index }) => {
+        elementosRef.current.forEach((el) => {
+          if (el?.dataset?.item === item) {
+            if (el && el.tagName === "SELECT") {
+              const [valorIndex, textoIndex] = index;
+              nuevaFila[valorIndex] = el.dataset.value;
+              let selectedOption = el.options[el.selectedIndex];
+              if (!selectedOption && el.options.length > 0) {
+                selectedOption = el.options[0];
+              }
+              if (selectedOption) {
+                nuevaFila[textoIndex] = selectedOption.textContent.trim();
+              } else {
+                nuevaFila[textoIndex] = "";
+              }
+            } else {
+              const indices = Array.isArray(index) ? index : [index];
+              indices.forEach((i) => {
+                nuevaFila[i] = el.dataset.value;
+              });
+            }
+          }
+        });
+      });
+      let requerido = true;
+      const elem1 = elementosRef.current.find(
+        (el) => el.dataset.item === "4" && el.dataset.value !== "",
+      );
+      const elem2 = elementosRef.current.find(
+        (el) => el.dataset.item === "993" && el.dataset.value !== "",
+      );
+      requerido = !!elem1 && !!elem2;
+
+      if (!requerido) {
+        alert("EXISTEN DATOS REQUERIDOS :");
+      } else {
+        elementosRef.current.forEach((el) => {
+          if (el?.type === "hidden") {
+            if (el?.dataset?.item === "10") {
+              nuevaFila[2] = el.dataset.value;
+            }
+          }
+        });
+        nuevaFila[0] = keyProgRuta;
+        nuevaFila[1] = "";
+        nuevaFila[7] = "1";
+        const nuevaLista = [...(configTable.listaDatos || [])];
+        nuevaLista.push(nuevaFila.join("|"));
+        setConfigTable({
+          ...configTable,
+          listaDatos: nuevaLista,
+        });
+      }
     }
+  };
+
+  const handleCheckDeleteEvento = (fila) => {
+    if (!fila) return;
+    console.log("Eliminando la fila:", fila);
+
+    const nuevaLista = [...(configTable.listaDatos || [])];
+    fila.forEach((reg) => {
+      if (reg[1] === "") {
+        const posicion = Number(reg.slice(-1)[0]);
+        const index = nuevaLista.findIndex((item) => {
+          const comparar = item.slice(-1)[0];
+          return posicion === comparar;
+        });
+        console.log("index", index);
+        console.log("NuevaLista", nuevaLista);
+        // if (index !== -1) {
+        //   nuevaLista.splice(index, 1);
+        //   setConfigTable({
+        //     ...configTable,
+        //     listaDatos: nuevaLista,
+        //   });
+        // }
+      } else {
+        const posicion = Number(reg.slice(-1)[0]) + 2;
+        if (!isNaN(posicion) && nuevaLista[posicion] != undefined) {
+          const partes = nuevaLista[posicion].split("|");
+          partes[7] = "0";
+          nuevaLista[posicion] = partes.join("|");
+          console.log("elemento:", nuevaLista);
+        }
+      }
+    });
   };
 
   const urlMap = {
@@ -816,6 +924,7 @@ const ProgExtraordinaria = () => {
           <BaseTablaMatriz2
             configTable={configTable}
             handleRadioClick={handleRadioClickEvento}
+            handleCheckDelete={handleCheckDeleteEvento}
           />
         )}
       </div>
