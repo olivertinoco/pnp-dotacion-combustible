@@ -23,10 +23,10 @@ const ProgExtraordinaria = () => {
   const closeChildRef = useRef(closeChild);
   const [forcedOption, setForcedOption] = useState({});
   const [optionFlag, setOptionFlag] = useState({});
-  const [configTable, setConfigTable] = useState({});
   const [usarHardcodedExternoMap, setUsarHardcodedExternoMap] = useState({});
   const [filaSeleccionada, setFilaSeleccionada] = useState([]);
   const [keyProgRuta, setKeyProgRuta] = useState("");
+  const [configTable, setConfigTable] = useState({});
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -273,6 +273,18 @@ const ProgExtraordinaria = () => {
       setMensajeToast("NO existen datos que enviar");
       setTipoToast("error");
       setTimeout(() => setMensajeToast(""), 2000);
+
+      configTable.listaDatos.forEach((fila, index) => {
+        if (index < 2) return;
+        const hashInicio = configTable?.hash[index];
+        const hashFinal = hashString(fila);
+        if (hashInicio !== hashFinal) {
+          console.log("listaDatos", fila);
+        }
+      });
+
+      // console.log("setConfigTable", configTable);
+
       return;
     }
 
@@ -695,47 +707,54 @@ const ProgExtraordinaria = () => {
         nuevaFila[0] = keyProgRuta;
         nuevaFila[1] = "";
         nuevaFila[7] = "1";
-        const nuevaLista = [...(configTable.listaDatos || [])];
-        nuevaLista.push(nuevaFila.join("|"));
-        setConfigTable({
-          ...configTable,
-          listaDatos: nuevaLista,
-        });
+
+        if (!configTable?.listaDatos || configTable.listaDatos.length === 0) {
+          const cabecera = mapaListas[741].slice(1);
+          const nuevaFilaDatos = [...cabecera, nuevaFila.join("|")];
+          setConfigTable({
+            title: "PROGRAMACION DE RUTAS:",
+            isPaginar: false,
+            listaDatos: nuevaFilaDatos,
+            offsetColumnas: 11,
+            hash: "",
+          });
+        } else {
+          const nuevaFilaDatos = [
+            ...(configTable.listaDatos || []),
+            nuevaFila.join("|"),
+          ];
+          setConfigTable({
+            ...configTable,
+            listaDatos: nuevaFilaDatos,
+          });
+        }
       }
     }
   };
 
   const handleCheckDeleteEvento = (fila) => {
     if (!fila) return;
-    console.log("Eliminando la fila:", fila);
-
     const nuevaLista = [...(configTable.listaDatos || [])];
-    fila.forEach((reg) => {
-      if (reg[1] === "") {
-        const posicion = Number(reg.slice(-1)[0]);
-        const index = nuevaLista.findIndex((item) => {
-          const comparar = item.slice(-1)[0];
-          return posicion === comparar;
+    const posicion = fila.index;
+    if (fila.fila[1] === "") {
+      if (posicion > -1 && posicion < nuevaLista.length) {
+        nuevaLista.splice(posicion, 1);
+        setConfigTable({
+          ...configTable,
+          listaDatos: nuevaLista,
         });
-        console.log("index", index);
-        console.log("NuevaLista", nuevaLista);
-        // if (index !== -1) {
-        //   nuevaLista.splice(index, 1);
-        //   setConfigTable({
-        //     ...configTable,
-        //     listaDatos: nuevaLista,
-        //   });
-        // }
-      } else {
-        const posicion = Number(reg.slice(-1)[0]) + 2;
-        if (!isNaN(posicion) && nuevaLista[posicion] != undefined) {
-          const partes = nuevaLista[posicion].split("|");
-          partes[7] = "0";
-          nuevaLista[posicion] = partes.join("|");
-          console.log("elemento:", nuevaLista);
-        }
       }
-    });
+    } else {
+      if (posicion > -1 && posicion < nuevaLista.length) {
+        const partes = nuevaLista[posicion].split("|");
+        partes[7] = fila.checked === 1 ? "0" : "1";
+        nuevaLista[posicion] = partes.join("|");
+        setConfigTable({
+          ...configTable,
+          listaDatos: nuevaLista,
+        });
+      }
+    }
   };
 
   const urlMap = {

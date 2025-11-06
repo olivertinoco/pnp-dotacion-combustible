@@ -62,6 +62,7 @@ const Fila = memo(
             selectedChecked.includes(virtualRow.index) &&
             virtualRow.index < listaLength
           }
+          onChange={() => {}}
           onClick={() => handleCheckDelete(virtualRow.index)}
           className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
         />
@@ -140,25 +141,48 @@ export const BaseTablaMatriz2 = ({
     });
   }, [isPaginar, paginatedRows, filteredRows, offsetColumnas]);
 
+  //limpiar indices fuera de rango cuando cambia la lista
+  // ====================================================
+  useEffect(() => {
+    if (!listaDatos || listaDatos.length === 0) {
+      setSelectedChecked([]);
+      return;
+    }
+    const checkedFromData = datosTabla.reduce((acc, d, relIndex) => {
+      const partes = d?.completa;
+      if (partes && partes[7] === "0") acc.push(relIndex);
+      return acc;
+    }, []);
+
+    setSelectedChecked((prev) => {
+      const prevValid = (prev || []).filter(
+        (i) => i >= 0 && i < datosTabla.length,
+      );
+      const union = Array.from(new Set([...prevValid, ...checkedFromData]));
+      const iguales =
+        prevValid.length === union.length &&
+        prevValid.every((v, i) => v === union[i]);
+      if (iguales) return prev;
+      return union;
+    });
+  }, [listaDatos, datosTabla]);
+
   const handleRadioClickInterno = useCallback(
     (index) => {
-      setSelectedRadio((prev) => {
-        const newValue = prev === index ? null : index;
-        if (newValue !== null) {
-          setSelectedChecked((prev) => prev.filter((i) => i !== index));
-        }
-        if (newValue !== null) {
-          const filaSeleccionada = datosTabla[newValue];
-          if (filaSeleccionada) {
-            const completaConIndex = [...filaSeleccionada.completa, newValue];
-            handleRadioClick?.(completaConIndex);
-          } else {
-            handleRadioClick?.(null);
-          }
+      setSelectedRadio((prevRadio) => {
+        const newRadio = prevRadio === index ? null : index;
+        // Si el nuevo radio está marcado, desmarcar el checkbox
+        setSelectedChecked((prevChecked) =>
+          prevChecked.filter((i) => i !== index),
+        );
+        const filaSeleccionada = datosTabla[index];
+        if (filaSeleccionada && newRadio !== null) {
+          const completaConIndex = [...filaSeleccionada.completa, index];
+          handleRadioClick?.(completaConIndex);
         } else {
           handleRadioClick?.(null);
         }
-        return newValue;
+        return newRadio;
       });
     },
     [datosTabla, handleRadioClick],
@@ -171,26 +195,42 @@ export const BaseTablaMatriz2 = ({
         const next = already
           ? prev.filter((i) => i !== index)
           : [...prev, index];
+        const isChecked = already ? 0 : 1;
         // Si marcamos el checkbox para 'index' y ese index estaba seleccionado por radio, quitar el radio
         if (!already && selectedRadio === index) {
           setSelectedRadio(null);
-          // also inform parent radio cleared
           handleRadioClick?.(null);
         }
-        // Propaga al padre lista de filas seleccionadas para eliminar (array de completas)
-        if (next.length > 0) {
-          const seleccionadas = next
-            .map((i) => datosTabla[i])
-            .filter(Boolean)
-            .map((d, i) => [...d.completa, next[i]]);
-          handleCheckDelete?.(seleccionadas);
+
+        const headerOffset =
+          listaDatos && dataRows ? listaDatos.length - dataRows.length : 2;
+        const pageStart = isPaginar ? start : 0;
+        const originalIndex = headerOffset + pageStart + index;
+
+        const filaSeleccionada = datosTabla[index];
+        if (filaSeleccionada) {
+          // const filaConIndex = [...filaSeleccionada.completa, isChecked, index];
+          handleCheckDelete?.({
+            fila: filaSeleccionada.completa,
+            index: originalIndex,
+            checked: isChecked,
+          });
         } else {
           handleCheckDelete?.(null);
         }
         return next;
       });
     },
-    [datosTabla, handleCheckDelete, selectedRadio, handleRadioClick],
+    [
+      datosTabla,
+      dataRows,
+      listaDatos,
+      start,
+      isPaginar,
+      handleCheckDelete,
+      selectedRadio,
+      handleRadioClick,
+    ],
   );
 
   const {
