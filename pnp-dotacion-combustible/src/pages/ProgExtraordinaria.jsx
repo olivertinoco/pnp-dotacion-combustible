@@ -269,57 +269,87 @@ const ProgExtraordinaria = () => {
   };
 
   const handleEnvio = useCallback(async () => {
-    if (!valoresCambiados.data.length && !valoresCambiados.campos.length) {
-      setMensajeToast("NO existen datos que enviar");
-      setTipoToast("error");
-      setTimeout(() => setMensajeToast(""), 2000);
-
-      configTable.listaDatos.forEach((fila, index) => {
-        if (index < 2) return;
+    const arrayMetaData = [];
+    const arrayDatos = [];
+    let envioDatosDetalle = "";
+    let dataEnviarCabecera = "";
+    configTable.listaDatos.forEach((fila, index) => {
+      if (index > 1) {
         const hashInicio = configTable?.hash[index];
         const hashFinal = hashString(fila);
         if (hashInicio !== hashFinal) {
-          console.log("listaDatos", fila);
+          const partes = fila.split("|");
+          const primeros8 = partes.slice(0, 8);
+          const [metaData, ...listaAux] = primeros8;
+          const preDatos = listaAux.join("|");
+          arrayMetaData.push(metaData.replaceAll("+", "|"));
+          arrayDatos.push(preDatos);
         }
-      });
-
-      // console.log("setConfigTable", configTable);
-
-      return;
+      }
+    });
+    if (!valoresCambiados.data.length && !valoresCambiados.campos.length) {
+      if (arrayDatos.length > 0 && arrayMetaData.length > 0) {
+        null;
+      } else {
+        setMensajeToast("NO existen datos que enviar");
+        setTipoToast("error");
+        setTimeout(() => setMensajeToast(""), 2000);
+        return;
+      }
+    }
+    if (arrayDatos.length > 0 && arrayMetaData.length > 0) {
+      envioDatosDetalle =
+        usuario.trim() +
+        "~" +
+        arrayDatos.join("|") +
+        "|" +
+        arrayMetaData.join("|");
     }
 
     const nuevosData = [...valoresCambiados.data];
     const nuevosCampos = [...valoresCambiados.campos];
     const unicos = new Set();
 
-    Object.values(elementosRef.current).forEach((el) => {
-      if (el?.type === "hidden" && el.dataset.campo) {
-        const clave = `${el.dataset.campo}-${el.dataset.value}`;
-        if (!unicos.has(clave)) {
-          unicos.add(clave);
-          nuevosCampos.unshift(el.dataset.campo);
-          nuevosData.unshift(el.dataset.value);
-        }
-      }
+    const resultadosHidden = nuevosCampos.map((campo) => {
+      const elemento = elementosRef.current.find(
+        (el) => el?.dataset?.campo === campo && el?.type === "hidden",
+      );
+      return !!elemento;
     });
-    const dataEnviar =
-      usuario.trim() +
-      "~" +
-      nuevosData.join("|") +
-      "|" +
-      nuevosCampos.join("|");
+    const soloHiddens = !resultadosHidden.includes(false);
+
+    if (!soloHiddens) {
+      Object.values(elementosRef.current).forEach((el) => {
+        if (el?.type === "hidden" && el.dataset.campo) {
+          const clave = `${el.dataset.campo}-${el.dataset.value}`;
+          if (!unicos.has(clave)) {
+            unicos.add(clave);
+            nuevosCampos.unshift(el.dataset.campo);
+            nuevosData.unshift(el.dataset.value);
+          }
+        }
+      });
+      dataEnviarCabecera =
+        usuario.trim() +
+        "~" +
+        nuevosData.join("|") +
+        "|" +
+        nuevosCampos.join("|");
+    }
+
+    console.log("Datos a Enviar Cabecera:", dataEnviarCabecera);
+    console.log("Datos a Enviar Detalle:", envioDatosDetalle);
 
     const formData = new FormData();
-    formData.append("data", dataEnviar);
-
-    console.log("Datos a Enviar Datos:", dataEnviar);
+    formData.append("data", dataEnviarCabecera);
 
     setIsSubmitting(true);
     try {
-      const result = await runFetch("/Home/GrabarDatosVarios", {
-        method: "POST",
-        body: formData,
-      });
+      const result = "";
+      // const result = await runFetch("/Home/GrabarDatosVarios", {
+      //   method: "POST",
+      //   body: formData,
+      // });
 
       if (result) {
         setMensajeToast("Datos Guardados Correctamente ...");
