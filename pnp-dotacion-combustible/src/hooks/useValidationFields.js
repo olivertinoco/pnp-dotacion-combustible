@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const useValidationFields = (elementosRef) => {
   const [mensajeError, setMensajeError] = useState("");
@@ -7,6 +7,12 @@ const useValidationFields = (elementosRef) => {
     data: [],
     campos: [],
   });
+
+  const valoresRef = useRef(valoresCambiados);
+  const validoRef = useRef(esValido);
+
+  valoresRef.current = valoresCambiados;
+  validoRef.current = esValido;
 
   const handleClick = () => {
     let hayErrores = false;
@@ -70,19 +76,31 @@ const useValidationFields = (elementosRef) => {
       }
     });
 
-    setValoresCambiados({ data: dataLimpios, campos: camposLimpios });
+    const nuevosValores = { data: dataLimpios, campos: camposLimpios };
+    setValoresCambiados(nuevosValores);
+    valoresRef.current = nuevosValores;
+
     if (hayErrores) {
       setEsValido(false);
+      validoRef.current = false;
       setMensajeError("Existen campos obligatorios");
       setTimeout(() => {
         setMensajeError("");
       }, 2000);
     } else {
       setEsValido(true);
+      validoRef.current = true;
       setMensajeError("");
     }
   };
-  return { handleClick, mensajeError, esValido, valoresCambiados };
+  return {
+    handleClick,
+    mensajeError,
+    esValido,
+    valoresCambiados,
+    valoresRef,
+    validoRef,
+  };
 };
 
 export default useValidationFields;
