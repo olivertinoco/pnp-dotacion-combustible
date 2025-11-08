@@ -105,7 +105,7 @@ public class HomeController : Controller
             string rpta = "";
             string datos = Request.Form["data"].ToString();
             daSQL odaSQL = new daSQL(_configuration, "CNX");
-            rpta = odaSQL.ejecutarComando("dbo.usp_crud_generico01", "@data", datos);
+            rpta = odaSQL.ejecutarComando("dbo.usp_crud_generico_progRutas", "@data", datos);
             return rpta;
         }
         catch (Exception ex)
