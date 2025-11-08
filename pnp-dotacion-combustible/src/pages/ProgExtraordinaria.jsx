@@ -273,6 +273,12 @@ const ProgExtraordinaria = () => {
     const arrayDatos = [];
     let envioDatosDetalle = "";
     let dataEnviarCabecera = "";
+    if (
+      !configTable ||
+      !Array.isArray(configTable.listaDatos) ||
+      configTable?.listaDatos.length === 0
+    )
+      return;
     configTable.listaDatos.forEach((fila, index) => {
       if (index > 1) {
         const hashInicio = configTable?.hash[index];
@@ -337,31 +343,42 @@ const ProgExtraordinaria = () => {
         nuevosCampos.join("|");
     }
 
-    console.log("Datos a Enviar Cabecera:", dataEnviarCabecera);
-    console.log("Datos a Enviar Detalle:", envioDatosDetalle);
+    const formEnviar = dataEnviarCabecera + "^" + envioDatosDetalle;
 
+    console.log("formEnviar", formEnviar);
+
+    if (dataEnviarCabecera.trim() === "" && envioDatosDetalle.trim() === "")
+      return;
     const formData = new FormData();
-    formData.append("data", dataEnviarCabecera);
-
+    formData.append("data", formEnviar);
     setIsSubmitting(true);
     try {
-      const result = "";
-      // const result = await runFetch("/Home/GrabarDatosVarios", {
-      //   method: "POST",
-      //   body: formData,
-      // });
+      const result = await runFetch("/Home/GrabarDatosVarios", {
+        method: "POST",
+        body: formData,
+      });
 
       if (result) {
         setMensajeToast("Datos Guardados Correctamente ...");
         setTipoToast("success");
         setIsEdit(true);
 
-        console.log("Respuesta Grabacion Datos Datos:", result);
         if (result.trim() !== "") {
+          const rpta = result.trim().split("^");
           const elPK = elementosRef.current.find(
             (el) => el?.dataset?.item === "10",
           );
-          elPK.dataset.value = result.trim();
+          elPK.dataset.value = rpta?.[0];
+          if (rpta.length > 1) {
+            const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
+            const arregloDetalleGuardar = arregloDetalle.slice(2);
+            const hashArray = arregloDetalleGuardar.map(hashString);
+            setConfigTable((prev) => ({
+              ...prev,
+              listaDatos: arregloDetalleGuardar,
+              hash: hashArray,
+            }));
+          }
         }
 
         elementosRef.current.forEach((el) => {
