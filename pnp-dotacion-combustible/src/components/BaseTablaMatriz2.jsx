@@ -19,6 +19,7 @@ const Fila = memo(
     selectedChecked,
     handleCheckDelete,
     listaLength,
+    isEditing,
   }) => (
     <div
       data-row-index={virtualRow.index}
@@ -42,31 +43,35 @@ const Fila = memo(
           {val}
         </div>
       ))}
-      <div className="px-2 py-2 text-center" style={{ minWidth: "80px" }}>
-        <input
-          type="radio"
-          name="editarFila"
-          value={virtualRow.index}
-          checked={selectedRadio === virtualRow.index}
-          onChange={() => {}}
-          onClick={() => handleRadioClick(virtualRow.index)}
-          className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div className="px-2 py-2 text-center" style={{ minWidth: "80px" }}>
-        <input
-          type="checkbox"
-          name={`eliminarFila-${virtualRow.index}`}
-          value={virtualRow.index}
-          checked={
-            selectedChecked.includes(virtualRow.index) &&
-            virtualRow.index < listaLength
-          }
-          onChange={() => {}}
-          onClick={() => handleCheckDelete(virtualRow.index)}
-          className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+      {isEditing && (
+        <div className="px-2 py-2 text-center" style={{ minWidth: "80px" }}>
+          <input
+            type="radio"
+            name="editarFila"
+            value={virtualRow.index}
+            checked={selectedRadio === virtualRow.index}
+            onChange={() => {}}
+            onClick={() => handleRadioClick(virtualRow.index)}
+            className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
+      {isEditing && (
+        <div className="px-2 py-2 text-center" style={{ minWidth: "80px" }}>
+          <input
+            type="checkbox"
+            name={`eliminarFila-${virtualRow.index}`}
+            value={virtualRow.index}
+            checked={
+              selectedChecked.includes(virtualRow.index) &&
+              virtualRow.index < listaLength
+            }
+            onChange={() => {}}
+            onClick={() => handleCheckDelete(virtualRow.index)}
+            className="h-4 w-4 appearance-none border border-gray-300 rounded-sm checked:bg-blue-600 checked:border-blue-600 focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
     </div>
   ),
 );
@@ -75,6 +80,7 @@ export const BaseTablaMatriz2 = ({
   configTable,
   handleRadioClick,
   handleCheckDelete,
+  isEditing,
   onSelect,
 }) => {
   const { title, isPaginar, listaDatos, offsetColumnas } = configTable;
@@ -362,20 +368,23 @@ export const BaseTablaMatriz2 = ({
               {col[0]}
             </div>
           ))}
-          <div
-            className="px-2 py-2 font-semibold text-center text-blue-600"
-            style={{ minWidth: "80px" }}
-          >
-            EDITAR
-          </div>
-          <div
-            className="px-2 py-2 font-semibold text-center text-blue-600"
-            style={{ minWidth: "80px" }}
-          >
-            ELIMINAR
-          </div>
+          {isEditing && (
+            <>
+              <div
+                className="px-2 py-2 font-semibold text-center text-blue-600"
+                style={{ minWidth: "80px" }}
+              >
+                EDITAR
+              </div>
+              <div
+                className="px-2 py-2 font-semibold text-center text-blue-600"
+                style={{ minWidth: "80px" }}
+              >
+                ELIMINAR
+              </div>
+            </>
+          )}
         </div>
-
         {/* Body virtualizado */}
         <div
           className="relative"
@@ -416,6 +425,7 @@ export const BaseTablaMatriz2 = ({
                   }
                 }}
                 listaLength={listaDatos.length}
+                isEditing={isEditing}
               />
             );
           })}
