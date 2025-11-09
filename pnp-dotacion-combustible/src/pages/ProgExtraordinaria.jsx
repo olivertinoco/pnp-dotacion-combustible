@@ -6,6 +6,7 @@ import useValidationFields from "../hooks/useValidationFields";
 import CustomElement from "../components/CustomElement";
 import { useSelectStore } from "../store/selectStore";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
+import PopupBusquedaSinURL from "../components/PopupBusquedaSinURL";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
@@ -27,6 +28,8 @@ const ProgExtraordinaria = () => {
   const [filaSeleccionada, setFilaSeleccionada] = useState([]);
   const [keyProgRuta, setKeyProgRuta] = useState("");
   const [configTable, setConfigTable] = useState({});
+  const [buscaGrifo, setBuscaGrifo] = useState(false);
+  const [popupConfigGrifo, setPopupConfigGrifo] = useState({});
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -35,6 +38,8 @@ const ProgExtraordinaria = () => {
 
   const { handleClick, mensajeError, esValido, valoresCambiados } =
     useValidationFields(elementosRef);
+
+  const popupBusquedaGrifoRef = useRef(null);
 
   useEffect(() => {
     closeChildRef.current = closeChild;
@@ -804,6 +809,23 @@ const ProgExtraordinaria = () => {
     }
   };
 
+  const handleFilaSeleccionada = (fila) => {
+    if (Array.isArray(fila) && fila[1] !== "") {
+      const listaDatos = mapaListas[77];
+      setPopupConfigGrifo({
+        etiqueta: "Ingrese Nombre de Grifo:",
+        ancho: "900",
+        optionsProp: listaDatos,
+        offsetColumnas: 1,
+      });
+      setBuscaGrifo(true);
+    }
+  };
+
+  const handleChangeDesdePopup = () => {
+    console.log("DESDE EL POPUP GRIFOS...");
+  };
+
   const urlMap = {
     990: "/Home/TraerDatosProgVehiculoAyudas",
     991: "/Home/TraerDatosProgUnidadesAyudas",
@@ -991,6 +1013,23 @@ const ProgExtraordinaria = () => {
             configTable={configTable}
             handleRadioClick={handleRadioClickEvento}
             handleCheckDelete={handleCheckDeleteEvento}
+            isEditing={true}
+            onSelect={handleFilaSeleccionada}
+          />
+        )}
+        {buscaGrifo && (
+          <PopupBusquedaSinURL
+            ref={popupBusquedaGrifoRef}
+            parentRef={popupBusquedaGrifoRef}
+            onClose={() => {
+              setBuscaGrifo(false);
+              setPopupConfigGrifo({});
+            }}
+            etiqueta={popupConfigGrifo.etiqueta}
+            ancho={popupConfigGrifo.ancho}
+            listaDatos={popupConfigGrifo.optionsProp}
+            onChange={handleChangeDesdePopup}
+            offsetColumnas={popupConfigGrifo.offsetColumnas}
           />
         )}
       </div>
