@@ -6,7 +6,7 @@ import useValidationFields from "../hooks/useValidationFields";
 import CustomElement from "../components/CustomElement";
 import { useSelectStore } from "../store/selectStore";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
-import PopupBusquedaSinURL from "../components/PopupBusquedaSinURL";
+import PopupBusquedaSinURL2 from "../components/PopupBusquedaSinURL2";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
@@ -30,6 +30,7 @@ const ProgExtraordinaria = () => {
   const [configTable, setConfigTable] = useState({});
   const [buscaGrifo, setBuscaGrifo] = useState(false);
   const [popupConfigGrifo, setPopupConfigGrifo] = useState({});
+  const [listaDsublista, setListaDsublista] = useState([]);
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
@@ -235,6 +236,12 @@ const ProgExtraordinaria = () => {
         hash: hashArray,
       });
 
+      const lista743 = ayudasData
+        .filter((reg) => reg.split("~")[0] === "743")
+        .flatMap((reg) => reg.split("~").slice(1));
+
+      setListaDsublista(lista743);
+
       const ayudas = ayudasData.filter((reg) => reg.split("~")[0] !== "741");
       const nroReg = ayudas.length;
 
@@ -409,14 +416,6 @@ const ProgExtraordinaria = () => {
     }
   }, [esValido, handleEnvio]);
 
-  // const { selectedItems } = useSelectStore((state) => state.selectedItems);
-  // console.log("Fila seleccionada:", selectedItems);
-
-  // setTimeout(() => {
-  //   const { selectedItems } = useSelectStore.getState();
-  //   console.log("Fila seleccionada:", selectedItems[0]);
-  // }, 100);
-
   const preData = typeof data?.[0] === "string" ? data?.[0]?.split("~") : [];
   const info = preData?.[0]?.split("|") ?? [];
   const infoMeta = preData?.[1]?.split("|") ?? [];
@@ -452,6 +451,13 @@ const ProgExtraordinaria = () => {
       return acc;
     }, {});
   }, [listasData]);
+
+  useEffect(() => {
+    const lista743 = mapaListas[743];
+    if (lista743 && lista743.length > 0) {
+      setListaDsublista(lista743);
+    }
+  }, []);
 
   useEffect(() => {
     const nuevoValor = mapaListas?.[741]?.[0];
@@ -813,10 +819,12 @@ const ProgExtraordinaria = () => {
     if (Array.isArray(fila) && fila[1] !== "") {
       const listaDatos = mapaListas[77];
       setPopupConfigGrifo({
-        etiqueta: "Ingrese Nombre de Grifo:",
-        ancho: "900",
+        etiqueta: fila[11],
+        ancho: "1200",
         optionsProp: listaDatos,
         offsetColumnas: 1,
+        progRuta: fila[1],
+        metaDataKeys: listaDsublista,
       });
       setBuscaGrifo(true);
     }
@@ -1018,7 +1026,7 @@ const ProgExtraordinaria = () => {
           />
         )}
         {buscaGrifo && (
-          <PopupBusquedaSinURL
+          <PopupBusquedaSinURL2
             ref={popupBusquedaGrifoRef}
             parentRef={popupBusquedaGrifoRef}
             onClose={() => {
@@ -1030,6 +1038,8 @@ const ProgExtraordinaria = () => {
             listaDatos={popupConfigGrifo.optionsProp}
             onChange={handleChangeDesdePopup}
             offsetColumnas={popupConfigGrifo.offsetColumnas}
+            progRuta={popupConfigGrifo.progRuta}
+            metaDataKeys={popupConfigGrifo.metaDataKeys}
           />
         )}
       </div>
