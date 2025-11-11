@@ -258,6 +258,7 @@ const CustomElement = forwardRef(
         ancho,
         isFilter,
         usarHardcodedExterno,
+        onPopupClose,
         ...restProps
       } = props;
 
@@ -512,8 +513,10 @@ const CustomElement = forwardRef(
                         const extra = fila?.[2] ?? "";
                         const descr = fila?.[3] ?? "";
                         const label = fila[fila.length - 1];
+                        const { setSelectedItems } = useSelectStore.getState();
+                        setSelectedItems([fila]);
                         setOverrideOption({ value, label, extra, descr });
-                        if (props.onPopupClose) {
+                        if (typeof onPopupClose === "function") {
                           try {
                             props.onPopupClose("fila", value);
                           } catch (err) {
