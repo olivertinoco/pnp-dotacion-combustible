@@ -455,6 +455,7 @@ const CustomElement = forwardRef(
             onChange={handleChange}
             style={selectStyle}
             className="block w-full rounded-md border  px-3 py-2 shadow-sm opacity-50 cursor-not-allowed bg-gray-200 text-gray-700 font-bold"
+            // className="block w-full rounded-md border px-3 py-2 shadow-sm bg-gray-200 text-gray-700 font-bold opacity-70 pointer-events-none cursor-not-allowed select-none"
           >
             {restProps.forcedOption && restProps?.optionFlag === 1 ? (
               <option
