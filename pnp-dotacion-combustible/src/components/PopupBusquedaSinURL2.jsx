@@ -2,13 +2,14 @@ import {
   useState,
   useEffect,
   useRef,
-  useMemo,
   forwardRef,
   useImperativeHandle,
 } from "react";
 import CustomElement from "./CustomElement";
 import { BaseTablaMatriz2 } from "./BaseTablaMatriz2";
 import { useSelectStore } from "../store/selectStore";
+import { useLocation } from "react-router-dom";
+import useLazyFetch from "../hooks/useLazyFetch";
 
 const PopupBusquedaSinURL2 = forwardRef(
   (
@@ -31,6 +32,19 @@ const PopupBusquedaSinURL2 = forwardRef(
     const [programaRuta, setProgramaRuta] = useState(null);
     const [cabeceraClave, setCabeceraClave] = useState([]);
     const [configTable, setConfigTable] = useState({});
+    const [datosItemShow, setDatosItemShow] = useState([]);
+    const [forcedOption, setForcedOption] = useState({});
+    const [optionFlag, setOptionFlag] = useState({});
+    const [isEdit, setIsEdit] = useState(false);
+    const [filaSeleccionada, setFilaSeleccionada] = useState([]);
+    const [mensajeToast, setMensajeToast] = useState("");
+    const [tipoToast, setTipoToast] = useState("success");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const location = useLocation();
+    const usuario = location.state?.value;
+
+    const { runFetch } = useLazyFetch();
 
     const hashString = (str) => {
       let hash = 0;
@@ -68,20 +82,19 @@ const PopupBusquedaSinURL2 = forwardRef(
 
     const ayudaGrifos = (listaDatos ?? []).slice(1);
 
-    const datosItemShow = useMemo(() => {
+    useEffect(() => {
+      if (cabeceraClave.length === 0) return;
       const base = cabeceraClave.slice(1, 3);
       const datosItemSubitems = cabeceraClave.slice(3);
 
-      if (Array.isArray(datosItemSubitems) && datosItemSubitems.length > 0) {
-        datosItemSubitems.forEach((item) => {
-          const valores = item.split("|");
-          const valorNro = Number(valores[2]);
-          if (valorNro === Number(programaRuta)) {
-            base.push(valores.join("|"));
-          }
-        });
+      for (const item of datosItemSubitems) {
+        const valores = item.split("|");
+        const valorNro = Number(valores[2]);
+        if (valorNro === Number(programaRuta)) {
+          base.push(valores.join("|"));
+        }
       }
-      return base;
+      setDatosItemShow(base);
     }, [cabeceraClave, programaRuta]);
 
     const hashArray = datosItemShow.map(hashString);
@@ -96,8 +109,6 @@ const PopupBusquedaSinURL2 = forwardRef(
       });
     }, [datosItemShow]);
 
-    console.log("progRuta", progRuta);
-
     const mapaListas = {
       default: [],
     };
@@ -111,7 +122,7 @@ const PopupBusquedaSinURL2 = forwardRef(
             parentRef.current.value = value;
           }
         } catch (err) {
-          console.log("Error al propagar al padre:", err);
+          console.warn("Error al propagar al padre:", err);
         }
       },
     }));
@@ -124,16 +135,120 @@ const PopupBusquedaSinURL2 = forwardRef(
       }
     }, [datosItemShow]);
 
-    const handleRadioClickEvento = () => {
-      console.log("handleRadioClickEvento");
+    const limpiarElementos = () => {
+      const item = "701";
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === item);
+      const mapping = [
+        { item: "702", index: 8 },
+        { item: "703", index: 9 },
+        { item: "704", index: 10 },
+        { item: "705", index: 5 },
+        { item: "706", index: 4 },
+      ];
+      setIsEdit(false);
+      if (elemento && elemento.tagName === "SELECT") {
+        setTimeout(() => {
+          elemento.dataset.value = "";
+        }, 1000);
+        setForcedOption((prev) => ({
+          ...prev,
+          [item]: {
+            value: "",
+            label: "",
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item]: 0,
+        }));
+      }
+      mapping.forEach(({ item }) => {
+        elementosRef.current.forEach((el) => {
+          if (el?.dataset?.item === item) {
+            el.dataset.value = "";
+            el.value = "";
+          }
+        });
+      });
     };
 
-    const handleCheckDeleteEvento = () => {
-      console.log("handleCheckDeleteEvento");
+    const handleRadioClickEvento = (fila) => {
+      const item = "701";
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === item);
+      const mapping = [
+        { item: "702", index: 8 },
+        { item: "703", index: 9 },
+        { item: "704", index: 10 },
+        { item: "705", index: 5 },
+        { item: "706", index: 4 },
+      ];
+      if (fila) {
+        setIsEdit(true);
+        setFilaSeleccionada(fila);
+        mapping.forEach(({ item, index }) => {
+          elementosRef.current.forEach((el) => {
+            if (el?.dataset?.item === item) {
+              let valor = fila[index];
+              if (el.type === "date" && valor) {
+                valor = valor.split("T")[0];
+              }
+              el.dataset.value = valor;
+              el.value = valor;
+            }
+          });
+        });
+        if (elemento && elemento.tagName === "SELECT") {
+          elemento.dataset.value = fila[3];
+          setForcedOption((prev) => ({
+            ...prev,
+            [item]: {
+              value: fila[3],
+              label: fila[7],
+            },
+          }));
+          setOptionFlag((prev) => ({
+            ...prev,
+            [item]: 1,
+          }));
+        }
+      } else {
+        setIsEdit(false);
+        limpiarElementos();
+        setFilaSeleccionada([]);
+      }
+    };
+
+    const handleCheckDeleteEvento = (fila) => {
+      if (!fila) return;
+      const nuevaLista = [...(configTable.listaDatos || [])];
+      const posicion = fila.index;
+      if (fila.fila[1] === "") {
+        if (posicion > -1 && posicion < nuevaLista.length) {
+          nuevaLista.splice(posicion, 1);
+          setConfigTable((prev) => ({
+            ...prev,
+            listaDatos: nuevaLista,
+          }));
+        }
+      } else {
+        if (posicion > -1 && posicion < nuevaLista.length) {
+          const partes = nuevaLista[posicion].split("|");
+          partes[6] = fila.checked === 1 ? "0" : "1";
+          nuevaLista[posicion] = partes.join("|");
+          setConfigTable((prev) => ({
+            ...prev,
+            listaDatos: nuevaLista,
+          }));
+        }
+      }
     };
 
     const handleFilaSeleccionada = () => {
-      console.log("handleFilaSeleccionada");
+      null;
     };
 
     const handleAddGrifoClick = () => {
@@ -146,6 +261,50 @@ const PopupBusquedaSinURL2 = forwardRef(
       const validos = !!txt_grifo && !!txt_dotacion;
       if (!validos) {
         alert("Existen valores requeridos...");
+        return;
+      }
+      if (isEdit) {
+        const txt_dotacion = elementosRef.current
+          .filter(Boolean)
+          .find((el) => el.dataset.item === "705");
+        const txt_abastecimiento = elementosRef.current
+          .filter(Boolean)
+          .find((el) => el.dataset.item === "706");
+
+        const dataDotacion = txt_dotacion.value;
+        const dataAbastecimiento = txt_abastecimiento.value;
+        let unidadSeleccion = [];
+        const { selectedItems } = useSelectStore.getState();
+        if (selectedItems && selectedItems.length > 0) {
+          unidadSeleccion = selectedItems[0];
+          filaSeleccionada[3] = unidadSeleccion[0];
+          filaSeleccionada[7] = unidadSeleccion[2];
+          filaSeleccionada[8] = unidadSeleccion[4];
+          filaSeleccionada[9] = unidadSeleccion[5];
+          filaSeleccionada[10] = unidadSeleccion[6];
+          filaSeleccionada[11] = unidadSeleccion[7];
+        }
+        useSelectStore.setState({ selectedItems: [] });
+
+        filaSeleccionada[4] = dataAbastecimiento;
+        filaSeleccionada[5] = dataDotacion;
+        filaSeleccionada[12] = dataDotacion;
+
+        const posicion = Number(filaSeleccionada.slice(-1)[0]) + 2;
+        if (!isNaN(posicion)) {
+          const nuevaFilaSeleccionada = filaSeleccionada.slice(0, -1).join("|");
+          const filaHash = hashString(nuevaFilaSeleccionada);
+          const dataHash = configTable?.hash[posicion];
+          if (filaHash !== dataHash) {
+            const nuevaLista = [...(configTable.listaDatos || [])];
+            nuevaLista[posicion] = nuevaFilaSeleccionada;
+            setConfigTable((prev) => ({
+              ...prev,
+              listaDatos: nuevaLista,
+            }));
+            limpiarElementos();
+          }
+        }
       } else {
         const txt_abastecimiento = elementosRef.current
           .filter(Boolean)
@@ -167,17 +326,19 @@ const PopupBusquedaSinURL2 = forwardRef(
         valorReg.push(elementoSeleccionado[6]);
         valorReg.push(elementoSeleccionado[2]);
         valorReg.push(txt_dotacion.value);
-
         const poblar = valorReg.join("|");
 
-        setConfigTable((prev) => ({
-          ...prev,
-          listaDatos: [...(prev.listaDatos || []), poblar],
-        }));
-
-        console.log("cabeceraClave", datosItemShow);
+        setDatosItemShow((prev) => {
+          const next = Array.isArray(prev) ? [...prev, poblar] : [poblar];
+          setConfigTable((prevf) => ({
+            ...prevf,
+            listaDatos: [...prevf.listaDatos, ...next],
+          }));
+          return next;
+        });
 
         useSelectStore.setState({ selectedItems: [] });
+        limpiarElementos();
       }
     };
 
@@ -200,8 +361,81 @@ const PopupBusquedaSinURL2 = forwardRef(
       });
     };
 
-    const handleGrabarProgGrifo = () => {
-      console.log("grabar datos del la prog grifos:");
+    const handleGrabarProgGrifo = async () => {
+      const arrayMetaData = [];
+      const arrayDatos = [];
+      let envioDatosDetalle = "";
+      let dataEnviarCabecera = "";
+      if (
+        !configTable ||
+        !Array.isArray(configTable.listaDatos) ||
+        configTable?.listaDatos.length === 0
+      )
+        return;
+      configTable.listaDatos.forEach((fila, index) => {
+        if (index > 1) {
+          const hashInicio = configTable?.hash[index];
+          const hashFinal = hashString(fila);
+          if (hashInicio !== hashFinal) {
+            const partes = fila.split("|");
+            const primeros7 = partes.slice(0, 7);
+            const [metaData, ...listaAux] = primeros7;
+            const preDatos = listaAux.join("|");
+            arrayMetaData.push(metaData.replaceAll("+", "|"));
+            arrayDatos.push(preDatos);
+          }
+        }
+      });
+      if (arrayDatos.length > 0 && arrayMetaData.length > 0) {
+        envioDatosDetalle =
+          usuario.trim() +
+          "~" +
+          arrayDatos.join("|") +
+          "|" +
+          arrayMetaData.join("|");
+      } else {
+        setMensajeToast("NO existen datos que enviar");
+        setTipoToast("error");
+        setTimeout(() => setMensajeToast(""), 2000);
+        return;
+      }
+
+      const formEnviar = dataEnviarCabecera + "^" + envioDatosDetalle;
+
+      console.log("grabar datos del la prog grifos  (formEnviar):", formEnviar);
+
+      if (dataEnviarCabecera.trim() === "" && envioDatosDetalle.trim() === "")
+        return;
+      const formData = new FormData();
+      formData.append("data", formEnviar);
+
+      setIsSubmitting(true);
+      let grabacionExitosa = false;
+      try {
+        const result = await runFetch("/Home/GrabarDatosVarios2222", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (result) {
+          grabacionExitosa = true;
+          setMensajeToast("Datos Guardados Correctamente ...");
+          setTipoToast("success");
+          setIsEdit(true);
+        }
+      } catch (err) {
+        console.error(err);
+        setMensajeToast("Error al guardar la informacion ...");
+        setTipoToast("error");
+      } finally {
+        setIsSubmitting(false);
+        setTimeout(() => {
+          setMensajeToast("");
+          if (grabacionExitosa && typeof onClose === "function") {
+            onClose();
+          }
+        }, 2000);
+      }
     };
 
     return (
@@ -287,6 +521,14 @@ const PopupBusquedaSinURL2 = forwardRef(
                             unaLinea: metadata?.[11],
                             offsetColumnas: metadata?.[12],
                             ancho: metadata?.[13],
+                            forcedOption: forcedOption?.[metadata[6]] ?? null,
+                            optionFlag: optionFlag?.[metadata[6]] ?? null,
+                            setOptionFlag: (value) => {
+                              setOptionFlag((prev) => ({
+                                ...prev,
+                                [metadata[6]]: value,
+                              }));
+                            },
                             onPopupClose: () => handleCerrarPopup(),
                           }
                         : {
@@ -311,7 +553,7 @@ const PopupBusquedaSinURL2 = forwardRef(
               style={{ width: "50%" }}
               className="font-bold text-white text-lg border border-gray-300 rounded shadow-md px-3 py-1"
             >
-              AGREGAR GRIFO NUEVO
+              {isEdit ? "EDITAR RUTA GRIFO" : "AGREGAR NUEVA RUTA GRIFO"}
             </CustomElement>
             {!popupContent && (
               <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
@@ -339,10 +581,21 @@ const PopupBusquedaSinURL2 = forwardRef(
               </div>
             )}
           </div>
-
+          {mensajeToast && (
+            <div
+              className={`mt-3 p-3 text-sm rounded-md shadow-md ${
+                tipoToast === "success"
+                  ? "bg-green-700 text-white animate-bounce"
+                  : "bg-red-400 text-white animate-bounce"
+              }`}
+            >
+              {mensajeToast}
+            </div>
+          )}
           <div className="flex justify-between mt-4">
             <button
               onClick={handleGrabarProgGrifo}
+              {...(isSubmitting ? { disabled: true } : {})}
               className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md"
             >
               GRABAR PROGRAMACION DE GRIFO
