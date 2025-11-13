@@ -12,7 +12,6 @@ const ProgExtraordinaria = () => {
   const location = useLocation();
   const usuario = location.state?.value;
   const [datasets, setDatasets] = useState({});
-  const elementosRef = useRef([]);
   const inputRef = useRef(null);
   const [isEdit, setIsEdit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,14 +30,15 @@ const ProgExtraordinaria = () => {
   const [buscaGrifo, setBuscaGrifo] = useState(false);
   const [popupConfigGrifo, setPopupConfigGrifo] = useState({});
   const [listaDsublista, setListaDsublista] = useState([]);
+  const elementosRef = useRef([]);
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
 
   const { data, loading, error } = useFetch(API_RESULT_LISTAR);
   const { runFetch } = useLazyFetch();
 
-  const { handleClick, mensajeError, esValido, valoresCambiados } =
-    useValidationFields(elementosRef);
+  const validacion = useValidationFields(elementosRef);
+  const { handleClick, mensajeError, esValido, valoresCambiados } = validacion;
 
   const popupBusquedaGrifoRef = useRef(null);
 
@@ -95,6 +95,7 @@ const ProgExtraordinaria = () => {
 
     Object.keys(mapaListas).forEach((key) => (mapaListas[key] = []));
     setRefreshKey((k) => k + 1);
+    elementosRef.current = [];
   };
 
   const handleBuscarClick = async () => {
@@ -286,25 +287,25 @@ const ProgExtraordinaria = () => {
     let envioDatosDetalle = "";
     let dataEnviarCabecera = "";
     if (
-      !configTable ||
-      !Array.isArray(configTable.listaDatos) ||
-      configTable?.listaDatos.length === 0
-    )
-      return;
-    configTable.listaDatos.forEach((fila, index) => {
-      if (index > 1) {
-        const hashInicio = configTable?.hash[index];
-        const hashFinal = hashString(fila);
-        if (hashInicio !== hashFinal) {
-          const partes = fila.split("|");
-          const primeros8 = partes.slice(0, 8);
-          const [metaData, ...listaAux] = primeros8;
-          const preDatos = listaAux.join("|");
-          arrayMetaData.push(metaData.replaceAll("+", "|"));
-          arrayDatos.push(preDatos);
+      configTable &&
+      Array.isArray(configTable.listaDatos) &&
+      configTable?.listaDatos.length > 0
+    ) {
+      configTable.listaDatos.forEach((fila, index) => {
+        if (index > 1) {
+          const hashInicio = configTable?.hash[index];
+          const hashFinal = hashString(fila);
+          if (hashInicio !== hashFinal) {
+            const partes = fila.split("|");
+            const primeros8 = partes.slice(0, 8);
+            const [metaData, ...listaAux] = primeros8;
+            const preDatos = listaAux.join("|");
+            arrayMetaData.push(metaData.replaceAll("+", "|"));
+            arrayDatos.push(preDatos);
+          }
         }
-      }
-    });
+      });
+    }
     if (!valoresCambiados.data.length && !valoresCambiados.campos.length) {
       if (arrayDatos.length > 0 && arrayMetaData.length > 0) {
         null;
@@ -834,6 +835,15 @@ const ProgExtraordinaria = () => {
     console.log("DESDE EL POPUP GRIFOS...");
   };
 
+  const handleListaProgGrifos = (datosRecib) => {
+    if (datosRecib) {
+      const [_, ...datosRecibidos] = datosRecib.split("~");
+      mapaListas[743] = [...datosRecibidos];
+      const lista743 = [...datosRecibidos];
+      setListaDsublista(lista743);
+    }
+  };
+
   const urlMap = {
     990: "/Home/TraerDatosProgVehiculoAyudas",
     991: "/Home/TraerDatosProgUnidadesAyudas",
@@ -898,7 +908,9 @@ const ProgExtraordinaria = () => {
                     >
                       <CustomElement
                         ref={(el) => {
-                          if (el) elementosRef.current[metadata[6]] = el;
+                          if (el) {
+                            elementosRef.current[metadata[6]] = el;
+                          }
                         }}
                         typeCode={typeCode}
                         etiqueta={metadata[7] ?? ""}
@@ -1029,7 +1041,8 @@ const ProgExtraordinaria = () => {
           <PopupBusquedaSinURL2
             ref={popupBusquedaGrifoRef}
             parentRef={popupBusquedaGrifoRef}
-            onClose={() => {
+            onClose={(datosRecibidos) => {
+              handleListaProgGrifos(datosRecibidos);
               setBuscaGrifo(false);
               setPopupConfigGrifo({});
             }}

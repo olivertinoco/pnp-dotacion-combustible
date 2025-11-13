@@ -18,13 +18,24 @@ const useValidationFields = (elementosRef) => {
     let hayErrores = false;
     const nuevosData = [];
     const nuevosCampos = [];
-    const unicos = new Set();
 
-    Object.values(elementosRef.current).forEach((wrapper) => {
-      if (!wrapper || unicos.has(wrapper)) return;
-      unicos.add(wrapper);
+    if (Array.isArray(elementosRef.current)) {
+      elementosRef.current = elementosRef.current.filter(
+        (el, i, self) => el && self.indexOf(el) === i,
+      );
+    }
+
+    const wrappersUnicos = Array.from(
+      new Set(
+        Object.values(elementosRef.current).filter(
+          (el) => el instanceof HTMLElement,
+        ),
+      ),
+    );
+
+    wrappersUnicos.forEach((wrapper) => {
+      if (!wrapper) return;
       const input = wrapper.querySelector("input, select, textarea") || wrapper;
-
       if (
         input?.type?.toLowerCase() === "hidden" ||
         wrapper?.type?.toLowerCase() === "hidden" ||
