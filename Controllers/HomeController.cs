@@ -203,5 +203,22 @@ public class HomeController : Controller
         }
     }
 
+    [HttpPost("/Home/TraerDatosProg_eo_grifo")]
+    public string TraerDatosProg_eo_grifo()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_crud_generico_prog_eo_grifo", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
 
 }

@@ -97,15 +97,29 @@ const PopupBusquedaSinURL2 = forwardRef(
       setDatosItemShow(base);
     }, [cabeceraClave, programaRuta]);
 
-    const hashArray = datosItemShow.map(hashString);
-
     useEffect(() => {
-      setConfigTable({
-        title: "PROGRAMACION DE GRIFOS:",
-        isPaginar: false,
-        listaDatos: datosItemShow,
-        offsetColumnas: 11,
-        hash: hashArray,
+      setConfigTable((prev) => {
+        const listaDatos = datosItemShow || [];
+        const prevHash = prev?.hash || [];
+
+        const nuevoHash = listaDatos.map((fila, idx) => {
+          const hashExistente = prevHash[idx];
+          if (typeof hashExistente !== "undefined") {
+            return hashExistente;
+          }
+          const campos = fila.split("|");
+          if (!campos[1] || campos[1].trim() === "") return "";
+          return hashString(fila);
+        });
+
+        return {
+          ...prev,
+          title: "PROGRAMACION DE GRIFOS:",
+          isPaginar: false,
+          listaDatos,
+          offsetColumnas: 11,
+          hash: nuevoHash,
+        };
       });
     }, [datosItemShow]);
 
@@ -224,31 +238,30 @@ const PopupBusquedaSinURL2 = forwardRef(
 
     const handleCheckDeleteEvento = (fila) => {
       if (!fila) return;
-      const nuevaLista = [...(configTable.listaDatos || [])];
       const posicion = fila.index;
-      if (fila.fila[1] === "") {
-        if (posicion > -1 && posicion < nuevaLista.length) {
-          nuevaLista.splice(posicion, 1);
-          setConfigTable((prev) => ({
-            ...prev,
-            listaDatos: nuevaLista,
-          }));
-        }
-      } else {
-        if (posicion > -1 && posicion < nuevaLista.length) {
-          const partes = nuevaLista[posicion].split("|");
-          partes[6] = fila.checked === 1 ? "0" : "1";
-          nuevaLista[posicion] = partes.join("|");
-          setConfigTable((prev) => ({
-            ...prev,
-            listaDatos: nuevaLista,
-          }));
-        }
-      }
-    };
 
-    const handleFilaSeleccionada = () => {
-      null;
+      if (fila.fila[1] === "") {
+        setConfigTable((prev) => ({
+          ...prev,
+          listaDatos: (prev.listaDatos || []).filter(
+            (_, idx) => idx !== posicion,
+          ),
+        }));
+        setDatosItemShow((prev) => prev.filter((_, idx) => idx !== posicion));
+      } else {
+        setConfigTable((prev) => {
+          const nuevaLista = [...(prev.listaDatos || [])];
+          if (posicion > -1 && posicion < nuevaLista.length) {
+            const partes = nuevaLista[posicion].split("|");
+            partes[6] = fila.checked === 1 ? "0" : "1";
+            nuevaLista[posicion] = partes.join("|");
+          }
+          return {
+            ...prev,
+            listaDatos: nuevaLista,
+          };
+        });
+      }
     };
 
     const handleAddGrifoClick = () => {
@@ -302,6 +315,7 @@ const PopupBusquedaSinURL2 = forwardRef(
               ...prev,
               listaDatos: nuevaLista,
             }));
+            setDatosItemShow(nuevaLista);
             limpiarElementos();
           }
         }
@@ -332,7 +346,8 @@ const PopupBusquedaSinURL2 = forwardRef(
           const next = Array.isArray(prev) ? [...prev, poblar] : [poblar];
           setConfigTable((prevf) => ({
             ...prevf,
-            listaDatos: [...prevf.listaDatos, ...next],
+            listaDatos: [...(prevf.listaDatos || []), poblar],
+            hash: [...prevf.hash, ""],
           }));
           return next;
         });
@@ -359,6 +374,26 @@ const PopupBusquedaSinURL2 = forwardRef(
           }
         });
       });
+
+      const item = "701";
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === item);
+
+      if (elemento && elemento.tagName === "SELECT") {
+        elemento.dataset.value = elementoSeleccionado[0];
+        setForcedOption((prev) => ({
+          ...prev,
+          [item]: {
+            value: elementoSeleccionado[0],
+            label: elementoSeleccionado[2],
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item]: 1,
+        }));
+      }
     };
 
     const handleGrabarProgGrifo = async () => {
@@ -367,25 +402,25 @@ const PopupBusquedaSinURL2 = forwardRef(
       let envioDatosDetalle = "";
       let dataEnviarCabecera = "";
       if (
-        !configTable ||
-        !Array.isArray(configTable.listaDatos) ||
-        configTable?.listaDatos.length === 0
-      )
-        return;
-      configTable.listaDatos.forEach((fila, index) => {
-        if (index > 1) {
-          const hashInicio = configTable?.hash[index];
-          const hashFinal = hashString(fila);
-          if (hashInicio !== hashFinal) {
-            const partes = fila.split("|");
-            const primeros7 = partes.slice(0, 7);
-            const [metaData, ...listaAux] = primeros7;
-            const preDatos = listaAux.join("|");
-            arrayMetaData.push(metaData.replaceAll("+", "|"));
-            arrayDatos.push(preDatos);
+        configTable &&
+        Array.isArray(configTable.listaDatos) &&
+        configTable?.listaDatos.length > 0
+      ) {
+        configTable.listaDatos.forEach((fila, index) => {
+          if (index > 1) {
+            const hashInicio = configTable?.hash[index];
+            const hashFinal = hashString(fila);
+            if (hashInicio !== hashFinal) {
+              const partes = fila.split("|");
+              const primeros7 = partes.slice(0, 7);
+              const [metaData, ...listaAux] = primeros7;
+              const preDatos = listaAux.join("|");
+              arrayMetaData.push(metaData.replaceAll("+", "|"));
+              arrayDatos.push(preDatos);
+            }
           }
-        }
-      });
+        });
+      }
       if (arrayDatos.length > 0 && arrayMetaData.length > 0) {
         envioDatosDetalle =
           usuario.trim() +
@@ -399,11 +434,9 @@ const PopupBusquedaSinURL2 = forwardRef(
         setTimeout(() => setMensajeToast(""), 2000);
         return;
       }
-
       const formEnviar = dataEnviarCabecera + "^" + envioDatosDetalle;
 
-      console.log("grabar datos del la prog grifos  (formEnviar):", formEnviar);
-
+      // console.log("grabar datos del la prog grifos:", formEnviar);
       if (dataEnviarCabecera.trim() === "" && envioDatosDetalle.trim() === "")
         return;
       const formData = new FormData();
@@ -411,14 +444,16 @@ const PopupBusquedaSinURL2 = forwardRef(
 
       setIsSubmitting(true);
       let grabacionExitosa = false;
+      let recuperaData = "";
       try {
-        const result = await runFetch("/Home/GrabarDatosVarios2222", {
+        const result = await runFetch("/Home/TraerDatosProg_eo_grifo", {
           method: "POST",
           body: formData,
         });
 
         if (result) {
           grabacionExitosa = true;
+          recuperaData = result;
           setMensajeToast("Datos Guardados Correctamente ...");
           setTipoToast("success");
           setIsEdit(true);
@@ -431,11 +466,19 @@ const PopupBusquedaSinURL2 = forwardRef(
         setIsSubmitting(false);
         setTimeout(() => {
           setMensajeToast("");
-          if (grabacionExitosa && typeof onClose === "function") {
-            onClose();
+          if (
+            grabacionExitosa &&
+            typeof onClose === "function" &&
+            typeof recuperaData === "string"
+          ) {
+            onClose(recuperaData);
           }
-        }, 2000);
+        }, 1000);
       }
+    };
+
+    const handleFilaSeleccionada = () => {
+      null;
     };
 
     return (
@@ -601,7 +644,9 @@ const PopupBusquedaSinURL2 = forwardRef(
               GRABAR PROGRAMACION DE GRIFO
             </button>
             <button
-              onClick={onClose}
+              onClick={() => {
+                if (typeof onClose === "function") onClose(null);
+              }}
               className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md"
             >
               Cerrar
