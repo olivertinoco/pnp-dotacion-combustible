@@ -3,6 +3,7 @@ import Login from "./components/Login";
 import Menu from "./components/Menu";
 import ProgDotacion from "./pages/ProgDotacion";
 import ProgExtraordinaria from "./pages/ProgExtraordinaria";
+import ProgExtraordinariaSearch from "./pages/ProgExtraordinariaSearch";
 import PrivateRoute from "./context/PrivateRoute";
 import { useData } from "./context/DataProvider";
 
@@ -11,13 +12,14 @@ export default function App() {
 
   const componentsMap = {
     ProgDotacion,
-    ProgExtraordinaria,
+    ProgExtraordinariaSearch,
   };
 
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+
         <Route
           path="/menu/*"
           element={
@@ -40,7 +42,15 @@ export default function App() {
               );
             })}
         </Route>
-        <Route />
+
+        <Route
+          path="/prog-extra-ord-base"
+          element={
+            <PrivateRoute>
+              <ProgExtraordinaria />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
   );
