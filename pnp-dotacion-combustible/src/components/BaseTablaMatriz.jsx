@@ -41,7 +41,11 @@ const Fila = memo(
   ),
 );
 
-export const BaseTablaMatriz = ({ configTable, onSelect }) => {
+export const BaseTablaMatriz = ({
+  configTable,
+  onSelect,
+  rowsPerPage = 20,
+}) => {
   const { title, isPaginar, listaDatos, offsetColumnas } = configTable;
 
   const rowsOriginal = listaDatos;
@@ -52,7 +56,6 @@ export const BaseTablaMatriz = ({ configTable, onSelect }) => {
 
   // .... inicio de paginacion ....
   const [page, setPage] = useState(1);
-  const rowsPerPage = 20;
   const [containerWidth, setContainerWidth] = useState(null);
   const [searchText, setSearchText] = useState("");
   const searchInputRef = useRef(null);

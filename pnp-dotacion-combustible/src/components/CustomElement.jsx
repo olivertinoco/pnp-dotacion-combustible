@@ -237,7 +237,7 @@ const CustomElement = forwardRef(
                 </div>
                 <button
                   onClick={() => setShowPopup(false)}
-                  className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
                 >
                   Cerrar
                 </button>
@@ -547,7 +547,7 @@ const CustomElement = forwardRef(
                     />
                   )}
                 </div>
-                <div className="pt-3 border-t border-gray-200 flex justify-end">
+                <div className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md flex justify-end">
                   <button
                     onClick={() => {
                       if (props.onPopupClose) {
@@ -559,7 +559,7 @@ const CustomElement = forwardRef(
                       }
                       setShowPopup(false);
                     }}
-                    className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
                   >
                     Cerrar
                   </button>
@@ -760,7 +760,17 @@ const CustomElement = forwardRef(
     }
 
     if (Tag === "button") {
-      const { etiqueta, children, onClick, style = {}, ...restProps } = props;
+      const {
+        etiqueta,
+        children,
+        onClick,
+        style = {},
+        isEdit = true,
+        ...restProps
+      } = props;
+
+      const isDisabledVisual = !isEdit;
+
       return (
         <div className="block w-full">
           {etiqueta && (
@@ -774,7 +784,14 @@ const CustomElement = forwardRef(
             {...restProps}
             onClick={onClick}
             style={style}
-            className={`px-4 py-2 rounded-md bg-indigo-500 text-white shadow-sm hover:bg-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-400 ${restProps.disabled ? "opacity-50 cursor-not-allowed bg-gray-300 hover:bg-gray-300" : ""}`}
+            className={`
+                      px-4 py-2 rounded-md shadow-sm
+                      ${
+                        isDisabledVisual
+                          ? "bg-gray-300 text-gray-600  cursor-not-allowed opacity-50"
+                          : "bg-indigo-500 text-white hover:bg-indigo-600 cursor-pointer"
+                      }
+                    `}
           >
             {children}
           </button>

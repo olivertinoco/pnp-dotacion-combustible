@@ -135,7 +135,7 @@ const PopupBusqueda = forwardRef(
 
     const configTable = {
       title: etiqueta,
-      isPaginar: false,
+      isPaginar: true,
       listaDatos: optionsPropRef.current,
       offsetColumnas: offsetColumnas ?? 1,
     };
@@ -312,6 +312,7 @@ const PopupBusqueda = forwardRef(
                     if (onChange) onChange(fakeEvent);
                     onClose();
                   }}
+                  rowsPerPage={10}
                 />
               </div>
             )}
@@ -320,7 +321,7 @@ const PopupBusqueda = forwardRef(
           <div className="flex justify-end mt-4">
             <button
               onClick={onClose}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md"
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
             >
               Cerrar
             </button>
