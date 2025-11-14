@@ -541,7 +541,7 @@ const ProgExtraordinaria = () => {
     return lista;
   };
 
-  const handlePopup = (item) => {};
+  const handlePopup = () => {};
 
   const handlePopupClose = (item) => {
     const { selectedItems } = useSelectStore.getState();
@@ -580,7 +580,7 @@ const ProgExtraordinaria = () => {
 
       const { setSelectedItems } = useSelectStore.getState();
       setSelectedItems([]);
-    }, 50);
+    }, 500);
   };
 
   const handleRadioClickEvento = (fila) => {
