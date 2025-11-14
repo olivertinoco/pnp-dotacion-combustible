@@ -7,6 +7,7 @@ import CustomElement from "../components/CustomElement";
 import { useSelectStore } from "../store/selectStore";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 import PopupBusquedaSinURL2 from "../components/PopupBusquedaSinURL2";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
@@ -30,6 +31,7 @@ const ProgExtraordinaria = () => {
   const [buscaGrifo, setBuscaGrifo] = useState(false);
   const [popupConfigGrifo, setPopupConfigGrifo] = useState({});
   const [listaDsublista, setListaDsublista] = useState([]);
+  const [showConfirm, setShowConfirm] = useState(false);
   const elementosRef = useRef([]);
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
@@ -654,6 +656,35 @@ const ProgExtraordinaria = () => {
     }
   };
 
+  const limpiarCamposRutas = () => {
+    const mapping = ["4", "30", "31", "32", "34", "35"];
+    const elemento = elementosRef.current.filter(Boolean);
+    mapping.forEach((item) => {
+      const el = elemento.find((e) => e?.dataset?.item === item);
+      if (!el) return;
+      el.dataset.value = "";
+      el.value = "";
+    });
+    const item = "993";
+    const el = elemento.find((e) => e?.dataset?.item === item);
+    if (el && el.tagName === "SELECT") {
+      setTimeout(() => {
+        el.dataset.value = "";
+      }, 1000);
+      setForcedOption((prev) => ({
+        ...prev,
+        [item]: {
+          value: "",
+          label: "",
+        },
+      }));
+      setOptionFlag((prev) => ({
+        ...prev,
+        [item]: 0,
+      }));
+    }
+  };
+
   const handleRutaClick = () => {
     if (usarHardcodedExternoMap?.["993"]) {
       const nuevaFila = [];
@@ -787,6 +818,7 @@ const ProgExtraordinaria = () => {
             listaDatos: nuevaFilaDatos,
           });
         }
+        limpiarCamposRutas();
       }
     }
   };
@@ -828,6 +860,8 @@ const ProgExtraordinaria = () => {
         metaDataKeys: listaDsublista,
       });
       setBuscaGrifo(true);
+    } else {
+      alert("El nuevo registro debe ser grabado previamente..");
     }
   };
 
@@ -842,6 +876,10 @@ const ProgExtraordinaria = () => {
       const lista743 = [...datosRecibidos];
       setListaDsublista(lista743);
     }
+  };
+
+  const handleGuardarClick = () => {
+    setShowConfirm(true);
   };
 
   const urlMap = {
@@ -1075,12 +1113,22 @@ const ProgExtraordinaria = () => {
         )}
         <CustomElement
           typeCode={120}
-          onClick={() => handleClick()}
+          onClick={handleGuardarClick}
           {...(isSubmitting ? { disabled: true } : {})}
         >
           {isSubmitting ? "Guardando..." : "GUARDAR"}
         </CustomElement>
       </div>
+      {showConfirm && (
+        <ConfirmDialog
+          message="¿Deseas guardar los cambios?"
+          onConfirm={() => {
+            setShowConfirm(false);
+            handleClick();
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </>
   );
 };

@@ -594,8 +594,9 @@ const PopupBusquedaSinURL2 = forwardRef(
               typeCode={120}
               onClick={() => handleAddGrifoClick()}
               style={{ width: "50%" }}
-              className="font-bold text-white text-lg border border-gray-300 rounded shadow-md px-3 py-1"
+              className={`font-bold text-white text-lg border border-gray-300 rounded shadow-md px-3 py-1`}
             >
+              {/* AGREGAR RUTA*/}
               {isEdit ? "EDITAR RUTA GRIFO" : "AGREGAR NUEVA RUTA GRIFO"}
             </CustomElement>
             {!popupContent && (
@@ -647,7 +648,7 @@ const PopupBusquedaSinURL2 = forwardRef(
               onClick={() => {
                 if (typeof onClose === "function") onClose(null);
               }}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md"
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md"
             >
               Cerrar
             </button>
