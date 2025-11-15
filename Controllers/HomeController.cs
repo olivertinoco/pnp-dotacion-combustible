@@ -237,22 +237,22 @@ public class HomeController : Controller
         }
     }
 
-    // [HttpPost("/Home/Busqueda_prog_ord_extra")]
-    // public string Busqueda_prog_ord_extra()
-    // {
-    //     try
-    //     {
-    //         string rpta = "";
-    //         string datos = Request.Form["data"].ToString();
-    //         daSQL odaSQL = new daSQL(_configuration, "CNX");
-    //         rpta = odaSQL.ejecutarComando("dbo.usp_busqueda_prog_ord_extra", "@data", '');
-    //         return rpta;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _logger.LogError(ex, "Error al guardar la data...");
-    //         return "error";
-    //     }
-    // }
+    [HttpPost("/Home/Busqueda_listar_datos_prog_extra")]
+    public string Busqueda_listar_datos_prog_extra()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_busqueda_list_prog_extraord", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
 
 }

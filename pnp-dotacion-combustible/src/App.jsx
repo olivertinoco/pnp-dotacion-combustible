@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import Menu from "./components/Menu";
+import PageLayout from "./pages/PageLayout";
 import ProgDotacion from "./pages/ProgDotacion";
 import ProgExtraordinaria from "./pages/ProgExtraordinaria";
 import ProgExtraordinariaSearch from "./pages/ProgExtraordinariaSearch";
@@ -47,7 +48,9 @@ export default function App() {
           path="/prog-extra-ord-base"
           element={
             <PrivateRoute>
-              <ProgExtraordinaria />
+              <PageLayout>
+                <ProgExtraordinaria />
+              </PageLayout>
             </PrivateRoute>
           }
         />
