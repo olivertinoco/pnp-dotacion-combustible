@@ -8,7 +8,7 @@ import {
 import CustomElement from "./CustomElement";
 import { BaseTablaMatriz2 } from "./BaseTablaMatriz2";
 import { useSelectStore } from "../store/selectStore";
-import { useLocation } from "react-router-dom";
+// import { useLocation } from "react-router-dom";
 import useLazyFetch from "../hooks/useLazyFetch";
 
 const PopupBusquedaSinURL2 = forwardRef(
@@ -23,6 +23,7 @@ const PopupBusquedaSinURL2 = forwardRef(
       offsetColumnas,
       progRuta,
       metaDataKeys,
+      usuario,
     },
     ref,
   ) => {
@@ -41,8 +42,8 @@ const PopupBusquedaSinURL2 = forwardRef(
     const [tipoToast, setTipoToast] = useState("success");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const location = useLocation();
-    const usuario = location.state?.value;
+    // const location = useLocation();
+    // const usuario = location.state?.value;
 
     const { runFetch } = useLazyFetch();
 
@@ -436,7 +437,6 @@ const PopupBusquedaSinURL2 = forwardRef(
       }
       const formEnviar = dataEnviarCabecera + "^" + envioDatosDetalle;
 
-      // console.log("grabar datos del la prog grifos:", formEnviar);
       if (dataEnviarCabecera.trim() === "" && envioDatosDetalle.trim() === "")
         return;
       const formData = new FormData();

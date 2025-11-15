@@ -1,15 +1,20 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
 import useValidationFields from "../hooks/useValidationFields";
+import { useSelectStore } from "../store/selectStore";
 import CustomElement from "../components/CustomElement";
+import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 
 const ProgExtraordinariaSearch = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const usuario = location.state?.value;
   const elementosRef = useRef([]);
   const [datasets, setDatasets] = useState({});
+  const [popupContent, setPopupContent] = useState(false);
+  const [configTable, setConfigTable] = useState({});
 
   const API_RESULT_LISTAR = "/Home/Busqueda_prog_ord_extra";
   const { data, loading, error } = useFetch(API_RESULT_LISTAR);
@@ -75,7 +80,7 @@ const ProgExtraordinariaSearch = () => {
     Object.keys(posiciones)
       .sort((a, b) => Number(a) - Number(b))
       .forEach((clave) => {
-        resultado.push(posiciones[clave]);
+        resultado.push(posiciones[clave].trim());
       });
 
     const fechaIni = resultado[3];
@@ -103,34 +108,38 @@ const ProgExtraordinariaSearch = () => {
     }
     const datosBuscar = resultado.join("|");
 
-    console.log("resultado", datosBuscar);
+    // console.log("Data Enviar:", datosBuscar);
 
     const formData = new FormData();
     formData.append("data", datosBuscar);
     try {
-      const result = await runFetch("/Home/GrabarDatosVarios33444", {
+      const result = await runFetch("/Home/Busqueda_listar_datos_prog_extra", {
         method: "POST",
         body: formData,
       });
 
       if (result && result.trim() !== "") {
-        console.log("result:", result);
+        const filteredOptionsProp = result.split("~");
 
-        // const rpta = result.trim().split("^");
-        // const elPK = elementosRef.current.find(
-        //   (el) => el?.dataset?.item === "10",
-        // );
-        // elPK.dataset.value = rpta?.[0];
-        // if (rpta.length > 1) {
-        //   const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
-        //   const arregloDetalleGuardar = arregloDetalle.slice(2);
-        //   const hashArray = arregloDetalleGuardar.map(hashString);
-        //   setConfigTable((prev) => ({
-        //     ...prev,
-        //     listaDatos: arregloDetalleGuardar,
-        //     hash: hashArray,
-        //   }));
-        // }
+        if (filteredOptionsProp.length === 2) {
+          setConfigTable((prev) => ({
+            ...prev,
+            listasData: [],
+          }));
+          setPopupContent(false);
+          useSelectStore.setState({ selectedItems: [] });
+          alert("NO SE ENCONTRO INFORMACION");
+          return;
+        }
+
+        setConfigTable({
+          title: "Encontrados de Programación Ordinaria - Extraordinaria :",
+          isPaginar: false,
+          listaDatos: filteredOptionsProp,
+          offsetColumnas: 1,
+          hash: "",
+        });
+        setPopupContent(true);
       }
     } catch (err) {
       console.error(err);
@@ -144,7 +153,15 @@ const ProgExtraordinariaSearch = () => {
   }, [esValido, handleEnvio]);
 
   const handleNuevo = () => {
-    console.log("nuevo");
+    useSelectStore.setState({ selectedItems: [] });
+    navigate("/prog-extra-ord-base");
+  };
+
+  const handleFilaSeleccionada = (fila) => {
+    const { setSelectedItems } = useSelectStore.getState();
+    fila.push(usuario);
+    setSelectedItems([fila]);
+    navigate("/prog-extra-ord-base");
   };
 
   if (loading) {
@@ -286,6 +303,26 @@ const ProgExtraordinariaSearch = () => {
           NUEVA PROGRAMACION
         </button>
       </h2>
+      <div className="mb-4 flex-1 min-h-0 overflow-y-auto pr-2">
+        {popupContent && (
+          <div
+            style={{
+              maxHeight: "50vh",
+              overflowY: "auto",
+              border: "1px solid #e5e7eb",
+              borderRadius: "0.5rem",
+            }}
+          >
+            <BaseTablaMatriz2
+              configTable={configTable}
+              handleRadioClick={() => {}}
+              handleCheckDelete={() => {}}
+              isEditing={false}
+              onSelect={handleFilaSeleccionada}
+            />
+          </div>
+        )}
+      </div>
     </>
   );
 };

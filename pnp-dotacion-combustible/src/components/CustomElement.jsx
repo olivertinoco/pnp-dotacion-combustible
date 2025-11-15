@@ -772,7 +772,7 @@ const CustomElement = forwardRef(
       const isDisabledVisual = !isEdit;
 
       return (
-        <div className="block w-full">
+        <div className="inline-block w-full">
           {etiqueta && (
             <span className="block text-sm font-bold text-green-900 mb-1">
               {etiqueta}

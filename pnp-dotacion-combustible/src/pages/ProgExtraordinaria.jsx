@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
 import useValidationFields from "../hooks/useValidationFields";
@@ -11,7 +11,6 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
-  const usuario = location.state?.value;
   const [datasets, setDatasets] = useState({});
   const inputRef = useRef(null);
   const [isEdit, setIsEdit] = useState(false);
@@ -32,6 +31,9 @@ const ProgExtraordinaria = () => {
   const [popupConfigGrifo, setPopupConfigGrifo] = useState({});
   const [listaDsublista, setListaDsublista] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [usuario, setUsuario] = useState("");
+  // const usuario = location.state?.value;
+
   const elementosRef = useRef([]);
 
   const API_RESULT_LISTAR = "/Home/TraerListaProgExtraOrd";
@@ -43,6 +45,7 @@ const ProgExtraordinaria = () => {
   const { handleClick, mensajeError, esValido, valoresCambiados } = validacion;
 
   const popupBusquedaGrifoRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     closeChildRef.current = closeChild;
@@ -68,6 +71,21 @@ const ProgExtraordinaria = () => {
     }
     return hash.toString();
   };
+
+  const selectedItems = useSelectStore((state) => state.selectedItems);
+  const onceRef = useRef(false);
+
+  useEffect(() => {
+    if (onceRef.current) return;
+    if (selectedItems.length === 0) return;
+    const valor = selectedItems[0]?.[0];
+    const datoUsuario = selectedItems[0]?.slice(-1)[0];
+    setUsuario(datoUsuario);
+    if (!valor) return;
+    onceRef.current = true;
+    handleBuscarClick(valor);
+    useSelectStore.setState({ selectedItems: [] });
+  }, [selectedItems]);
 
   const limpiarCamposYStores = () => {
     setDatasets({});
@@ -100,14 +118,17 @@ const ProgExtraordinaria = () => {
     elementosRef.current = [];
   };
 
-  const handleBuscarClick = async () => {
+  const handleBuscarClick = async (parametro) => {
     setForcedOption({});
     setOptionFlag({});
     setDatasets({});
     setConfigTable({});
 
-    if (!inputRef.current) return;
-    const valorParametro = `zz|${inputRef.current.value}`;
+    // if (!inputRef.current) return;
+    // const valorParametro = `zz|${inputRef.current.value}`;
+
+    const valorParametro = `zz|${parametro}`;
+
     const result = await runFetch(
       `${API_RESULT_LISTAR}Param?dato=${encodeURIComponent(valorParametro)}`,
       {
@@ -118,25 +139,25 @@ const ProgExtraordinaria = () => {
         },
       },
     );
-    if (result.startsWith("error")) {
-      limpiarCamposYStores();
-      return;
-    }
+    // if (result.startsWith("error")) {
+    //   limpiarCamposYStores();
+    //   return;
+    // }
     // const preData = result.split("~");
     const preData = typeof result === "string" ? result.split("~") : [];
     const info = preData?.[0]?.split("|") ?? [];
     const infoMeta = preData?.[1]?.split("|") ?? [];
     const dataAyudas = preData?.slice(3)?.join("~");
 
-    if (
-      !result ||
-      result.trim() === "" ||
-      !info.length ||
-      info[0].trim() === ""
-    ) {
-      limpiarCamposYStores();
-      return;
-    }
+    // if (
+    //   !result ||
+    //   result.trim() === "" ||
+    //   !info.length ||
+    //   info[0].trim() === ""
+    // ) {
+    //   limpiarCamposYStores();
+    //   return;
+    // }
 
     const informacion = infoMeta.map((meta, idx) => ({
       data: info[idx] ?? "",
@@ -190,7 +211,7 @@ const ProgExtraordinaria = () => {
               el.dataset.valor = opcion.value;
               if (!el.dataset.valor || el.dataset.valor === "")
                 el.dataset.valor = el.dataset.value;
-              el.dispatchEvent(new Event("change", { bubbles: true }));
+              // el.dispatchEvent(new Event("change", { bubbles: true }));
               return true;
             }
             return false;
@@ -564,12 +585,12 @@ const ProgExtraordinaria = () => {
           el.value = valor;
           el.dataset.value = valor;
 
-          if (el.tagName === "SELECT" && el.options.length > 0) {
-            const opt = el.options[0];
-            opt.textContent = valor;
-            opt.value = valor;
-          }
-          el.dispatchEvent(new Event("input", { bubbles: true }));
+          // if (el.tagName === "SELECT" && el.options.length > 0) {
+          //   const opt = el.options[0];
+          //   opt.textContent = valor;
+          //   opt.value = valor;
+          // }
+          // el.dispatchEvent(new Event("input", { bubbles: true }));
           nuevo[item] = {
             value: valor,
             item: el.dataset.item ?? "",
@@ -858,6 +879,7 @@ const ProgExtraordinaria = () => {
         offsetColumnas: 1,
         progRuta: fila[1],
         metaDataKeys: listaDsublista,
+        usuario: usuario,
       });
       setBuscaGrifo(true);
     } else {
@@ -882,6 +904,10 @@ const ProgExtraordinaria = () => {
     setShowConfirm(true);
   };
 
+  const handleCerrarPage = () => {
+    navigate(-1);
+  };
+
   const urlMap = {
     990: "/Home/TraerDatosProgVehiculoAyudas",
     991: "/Home/TraerDatosProgUnidadesAyudas",
@@ -892,7 +918,7 @@ const ProgExtraordinaria = () => {
   return (
     <>
       <div className="text-xl font-bold mb-4 text-green-800 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <input
             type="text"
             ref={inputRef}
@@ -906,7 +932,7 @@ const ProgExtraordinaria = () => {
           >
             Buscar
           </button>
-        </div>
+        </div>*/}
         <span className="text-green-800">{isEdit ? "EDITAR" : "NUEVO"}</span>
       </div>
 
@@ -1091,6 +1117,7 @@ const ProgExtraordinaria = () => {
             offsetColumnas={popupConfigGrifo.offsetColumnas}
             progRuta={popupConfigGrifo.progRuta}
             metaDataKeys={popupConfigGrifo.metaDataKeys}
+            usuario={popupConfigGrifo.usuario}
           />
         )}
       </div>
@@ -1111,13 +1138,22 @@ const ProgExtraordinaria = () => {
             {mensajeToast}
           </div>
         )}
-        <CustomElement
-          typeCode={120}
-          onClick={handleGuardarClick}
-          {...(isSubmitting ? { disabled: true } : {})}
-        >
-          {isSubmitting ? "Guardando..." : "GUARDAR"}
-        </CustomElement>
+        <div className="flex justify-between items-center w-full gap-4 mt-8 mb-2">
+          <CustomElement
+            typeCode={120}
+            onClick={handleGuardarClick}
+            className="!w-auto"
+            {...(isSubmitting ? { disabled: true } : {})}
+          >
+            {isSubmitting ? "Guardando..." : "GUARDAR"}
+          </CustomElement>
+          <button
+            onClick={handleCerrarPage}
+            className="px-4 py-2 rounded-md shadow-sm bg-gray-300 text-black cursor-pointer opacity-50"
+          >
+            CERRAR
+          </button>
+        </div>
       </div>
       {showConfirm && (
         <ConfirmDialog
