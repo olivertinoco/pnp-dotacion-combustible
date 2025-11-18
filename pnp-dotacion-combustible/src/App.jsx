@@ -5,6 +5,7 @@ import PageLayout from "./pages/PageLayout";
 import ProgDotacion from "./pages/ProgDotacion";
 import ProgExtraordinaria from "./pages/ProgExtraordinaria";
 import ProgExtraordinariaSearch from "./pages/ProgExtraordinariaSearch";
+import ProgTarjetaMultiflota from "./pages/ProgTarjetaMultiflota";
 import PrivateRoute from "./context/PrivateRoute";
 import { useData } from "./context/DataProvider";
 
@@ -14,6 +15,7 @@ export default function App() {
   const componentsMap = {
     ProgDotacion,
     ProgExtraordinariaSearch,
+    ProgTarjetaMultiflota,
   };
 
   return (
