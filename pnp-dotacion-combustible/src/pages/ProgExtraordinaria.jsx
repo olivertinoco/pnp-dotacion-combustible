@@ -8,6 +8,7 @@ import { useSelectStore } from "../store/selectStore";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 import PopupBusquedaSinURL2 from "../components/PopupBusquedaSinURL2";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { TablePaginationActions } from "@mui/material";
 
 const ProgExtraordinaria = () => {
   const location = useLocation();
@@ -72,6 +73,9 @@ const ProgExtraordinaria = () => {
     return hash.toString();
   };
 
+  // ===============================
+  // NOTA: DATA QUE VIENE DE OTRA
+  // ===============================
   const selectedItems = useSelectStore((state) => state.selectedItems);
   const onceRef = useRef(false);
 

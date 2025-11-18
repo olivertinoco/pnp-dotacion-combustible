@@ -255,4 +255,60 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet("/Home/TraerTarjetaMultiflota")]
+    public string TraerTarjetaMultiflota()
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_listar_vehiculo_tarjeta_multiflota", "@data", "0");
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpPost("/Home/TraerTarjetaMultiflotaPlacaInterna")]
+    public string TraerTarjetaMultiflotaPlacaInterna()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            string param = $"{datos}|";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_vehiculo_tarjeta_multiflota", "@data", param);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+    [HttpPost("/Home/TraerTarjetaMultiflotaPlacaRodaje")]
+    public string TraerTarjetaMultiflotaPlacaRodaje()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            string param = $"|{datos}";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_vehiculo_tarjeta_multiflota", "@data", param);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
+
 }
