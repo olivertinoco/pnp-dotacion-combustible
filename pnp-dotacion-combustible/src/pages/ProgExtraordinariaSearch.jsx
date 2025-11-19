@@ -287,21 +287,23 @@ const ProgExtraordinariaSearch = () => {
         </div>
       </div>
       <h2 className="p-2 mt-4 text-lg font-medium text-green-700 mb-4 border-b border-green-300 pb-1 flex justify-between items-center">
-        <button
-          type="button"
-          onClick={handleClick}
-          className="bg-green-700 text-white px-3 py-1 rounded-md hover:bg-green-900 transition"
-        >
-          BUSCAR PROGRAMACION
-        </button>
         <span>Búsqueda de programación ordinaria - extraordinaria</span>
-        <button
-          type="button"
-          onClick={handleNuevo}
-          className="bg-green-700 text-white px-3 py-1 rounded-md hover:bg-green-900 transition"
-        >
-          NUEVA PROGRAMACION
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleClick}
+            className="bg-green-700 text-white px-3 py-1 rounded-md hover:bg-green-900 transition"
+          >
+            BUSCAR
+          </button>
+          <button
+            type="button"
+            onClick={handleNuevo}
+            className="bg-green-700 text-white px-3 py-1 rounded-md hover:bg-green-900 transition"
+          >
+            NUEVO
+          </button>
+        </div>
       </h2>
       <div className="mb-4 flex-1 min-h-0 overflow-y-auto pr-2">
         {popupContent && (

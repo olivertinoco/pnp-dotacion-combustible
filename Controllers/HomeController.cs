@@ -327,5 +327,21 @@ public class HomeController : Controller
         }
     }
 
-
+    [HttpPost("/Home/GrabarTarjetaMultiflota")]
+    public string GrabarTarjetaMultiflota()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_generico_grabar_tarjeta_multiflota", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
 }
