@@ -1,9 +1,12 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useSelectStore } from "../store/selectStore";
 import CustomElement from "../components/CustomElement";
+import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
+import useValidationFields from "../hooks/useValidationFields";
 
 const ProgTarjetaMultiflota = () => {
   const location = useLocation();
@@ -11,11 +14,220 @@ const ProgTarjetaMultiflota = () => {
   const [datasets, setDatasets] = useState({});
   const [forcedOption, setForcedOption] = useState({});
   const [optionFlag, setOptionFlag] = useState({});
+  const [isEdit, setIsEdit] = useState(false);
+  const [configTable, setConfigTable] = useState({});
+  const [idVehiculo, setIdVehiculo] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [mensajeToast, setMensajeToast] = useState("");
+  const [tipoToast, setTipoToast] = useState("success");
 
   const elementosRef = useRef([]);
 
   const API_RESULT_LISTAR = "/Home/TraerTarjetaMultiflota";
   const { data, loading, error } = useFetch(API_RESULT_LISTAR);
+  const { runFetch } = useLazyFetch();
+
+  const validacion = useValidationFields(elementosRef);
+  const { handleClick, mensajeError, esValido, valoresCambiados } = validacion;
+
+  const handleBuscarClick = async (parametro) => {
+    const valorParametro = `zz|${parametro}`;
+    const result = await runFetch(
+      `${API_RESULT_LISTAR}Param?dato=${encodeURIComponent(valorParametro)}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "text/plain",
+          "Content-Type": "text/plain",
+        },
+      },
+    );
+
+    if (result.startsWith("error")) {
+      console.warn("error");
+      return;
+    }
+
+    const preData = typeof result === "string" ? result.split("~") : [];
+    const info = preData?.[0]?.split("|") ?? [];
+    const infoMeta = preData?.[1]?.split("|") ?? [];
+    const dataAyudas = preData?.slice(3)?.join("~");
+
+    if (info.length === 1) {
+      setTimeout(() => {
+        elementosRef.current.forEach((el) => {
+          if (el && el.dataset) {
+            el.dataset.valor = "";
+          }
+        });
+      }, 100);
+      setIsEdit(false);
+    }
+
+    const informacion = infoMeta.map((meta, idx) => ({
+      data: info[idx] ?? "",
+      metadata: (meta ?? "").split("*"),
+    }));
+
+    const datoTarjeta = [
+      { item: "2", index: 4 },
+      { item: "3", index: 5 },
+      { item: "4", index: 6 },
+    ];
+    datoTarjeta.forEach(({ item, index }) => {
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset.item === item);
+      const raw = informacion[index]?.data;
+      const valor = String(raw ?? "").trim();
+      if (!elemento) return;
+      elemento.dataset.value = valor;
+      elemento.value = valor;
+    });
+
+    setTimeout(() => {
+      const raw = informacion[7]?.data;
+      const valor = String(raw ?? "").trim();
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset.item === "5");
+      if (elemento.tagName === "INPUT" && elemento.type === "checkbox") {
+        const esChecked = valor === "1";
+        elemento.dataset.value = esChecked ? "1" : "0";
+        elemento.checked = esChecked;
+      }
+    }, 100);
+
+    informacion
+      .filter((item) => item.metadata?.[5] === "100")
+      .forEach((item) => {
+        const campo = item.metadata[0];
+        const valor = item.data;
+
+        if (valor && valor.trim() !== "") {
+          elementosRef.current.forEach((el) => {
+            if (el?.type === "hidden" && el.dataset.campo === campo) {
+              el.value = valor;
+              el.dataset.value = valor;
+            }
+          });
+          setIsEdit(true);
+        }
+      });
+
+    if (dataAyudas) {
+      const ayudasData = dataAyudas.split("~");
+      if (ayudasData.length === 2) return;
+
+      setConfigTable((prev) => ({
+        ...prev,
+        title: "HISTORIAL DE CAMBIOS DE TARJETAS MULTIFLOTA:",
+        isPaginar: false,
+        listaDatos: ayudasData,
+        offsetColumnas: 0,
+      }));
+    }
+    setTimeout(() => {
+      elementosRef.current.forEach((el) => {
+        if (el && el.dataset) {
+          el.dataset.valor = el.dataset.value;
+        }
+      });
+    }, 100);
+  };
+
+  useEffect(() => {
+    handleBuscarClick(idVehiculo);
+  }, [idVehiculo]);
+
+  const handleEnvio = useCallback(async () => {
+    const nuevosData = [...valoresCambiados.data];
+    const nuevosCampos = [...valoresCambiados.campos];
+    const setHidden = new Set();
+    let dataEnviarCabecera = "";
+
+    if (!nuevosData.length && !nuevosCampos.length) {
+      setMensajeToast("NO existen datos que enviar");
+      setTipoToast("error");
+      setTimeout(() => setMensajeToast(""), 2000);
+      return;
+    }
+
+    const hiddenElements = elementosRef.current
+      .filter(Boolean)
+      .filter((el) => el?.type === "hidden");
+
+    hiddenElements.forEach((el) => {
+      const campo = el.dataset.campo ?? "";
+      const value = el.dataset.value ?? "";
+      setHidden.add(JSON.stringify({ campo, value }));
+    });
+
+    setHidden.forEach((item) => {
+      const { campo, value } = JSON.parse(item);
+      nuevosCampos.unshift(campo);
+      nuevosData.unshift(value);
+    });
+
+    dataEnviarCabecera =
+      usuario.trim() +
+      "~" +
+      nuevosData.join("|") +
+      "|" +
+      nuevosCampos.join("|");
+
+    console.log("GRABANDO...", dataEnviarCabecera);
+
+    const formData = new FormData();
+    formData.append("data", dataEnviarCabecera);
+    try {
+      const result = await runFetch("/Home/GrabarDatosVariosxxxx", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (result) {
+        setMensajeToast("Datos Guardados Correctamente ...");
+        setTipoToast("success");
+        setIsEdit(true);
+
+        if (result.trim() !== "") {
+          const rpta = result.trim().split("^");
+          const elPK = elementosRef.current
+            .filter(Boolean)
+            .find((el) => el?.dataset?.item === "10");
+          elPK.dataset.value = rpta?.[0];
+          if (rpta.length > 1) {
+            const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
+            const arregloDetalleGuardar = arregloDetalle.slice(2);
+            setConfigTable((prev) => ({
+              ...prev,
+              listaDatos: arregloDetalleGuardar,
+            }));
+          }
+        }
+
+        elementosRef.current.forEach((el) => {
+          if (!el) return;
+          el.dataset.valor = el.dataset.value ?? "";
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setMensajeToast("Error al guardar la informacion ...");
+      setTipoToast("error");
+    } finally {
+      setTimeout(() => {
+        setMensajeToast("");
+      }, 2000);
+    }
+  }, [valoresCambiados, usuario, runFetch]);
+
+  useEffect(() => {
+    if (esValido) {
+      handleEnvio();
+    }
+  }, [esValido, handleEnvio]);
 
   const preData = typeof data?.[0] === "string" ? data?.[0]?.split("~") : [];
   const info = preData?.[0]?.split("|") ?? [];
@@ -65,24 +277,6 @@ const ProgTarjetaMultiflota = () => {
     items: informacion.filter((item) => item.metadata[9] === grupo.id),
   }));
 
-  // NOTA: PARA VISUALIZAR LOS DATOS DEL HIDDENFIELD
-  // ===============================================
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     const valores = Object.values(elementosRef.current);
-  //     if (!valores.length) return;
-  //     valores.forEach((el) => {
-  //       if (el?.type === "hidden") {
-  //         console.log(
-  //           `Hidden encontrado: campo=${el.dataset?.campo}, item=${el.dataset?.item}, value=${el.dataset?.value}`,
-  //         );
-  //       }
-  //     });
-  //   }, 0);
-  //   return () => clearTimeout(timer);
-  // }, [agrupado]);
-  // ===============================================
-
   const handlePopup = () => {
     console.log("handlePopup");
   };
@@ -93,49 +287,62 @@ const ProgTarjetaMultiflota = () => {
     const elementoSeleccionado = selectedItems[0];
     const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
 
-    setTimeout(() => {
-      const camposActualizar = listas.map((str) => {
-        const [item, indice] = str.split("|");
-        return { item, indice: Number(indice) };
-      });
+    const camposActualizar = listas.map((str) => {
+      const [item, indice] = str.split("|");
+      return { item, indice: Number(indice) };
+    });
 
+    setTimeout(() => {
       setDatasets((prev) => {
         const nuevo = { ...prev };
         camposActualizar.forEach(({ item, indice }) => {
-          const el = elementosRef.current[item];
+          const el = elementosRef?.current?.[item];
           if (!el) return;
           const valor = elementoSeleccionado[indice] ?? "";
           el.value = valor;
           el.dataset.value = valor;
-          // el.dispatchEvent(new Event("input", { bubbles: true }));
+
+          const anterior = prev[item] ?? {};
+
           nuevo[item] = {
+            ...anterior,
             value: valor,
             item: el.dataset.item ?? "",
           };
+          // el.dispatchEvent(new Event("input", { bubbles: true }));
         });
         return nuevo;
       });
+    }, 600);
+
+    setTimeout(() => {
+      const hiddenVH = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset.item === "11");
+      hiddenVH.dataset.value = elementoSeleccionado[0];
+      hiddenVH.value = elementoSeleccionado[0];
     }, 500);
 
-    const item990 = "990";
-    const elemento = elementosRef.current
-      .filter(Boolean)
-      .find((ele) => ele?.dataset?.item === item990);
-    if (elemento && elemento.tagName === "SELECT") {
-      elemento.dataset.value = elementoSeleccionado[0];
-      setForcedOption((prev) => ({
-        ...prev,
-        [item990]: {
-          value: elementoSeleccionado[0],
-          label: elementoSeleccionado[1],
-        },
-      }));
-      setOptionFlag((prev) => ({
-        ...prev,
-        [item990]: 1,
-      }));
-    }
     setTimeout(() => {
+      const item990 = "990";
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((ele) => ele?.dataset?.item === item990);
+      if (elemento && elemento.tagName === "SELECT") {
+        elemento.dataset.value = elementoSeleccionado[1];
+        setForcedOption((prev) => ({
+          ...prev,
+          [item990]: {
+            value: elementoSeleccionado[1],
+            label: elementoSeleccionado[1],
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item990]: 1,
+        }));
+      }
+
       const item991 = "991";
       const elemento2 = elementosRef.current
         .filter(Boolean)
@@ -154,7 +361,10 @@ const ProgTarjetaMultiflota = () => {
           [item991]: 1,
         }));
       }
-    }, 2000);
+      setTimeout(() => {
+        setIdVehiculo(elementoSeleccionado[0]);
+      }, 500);
+    }, 1000);
 
     const { setSelectedItems } = useSelectStore.getState();
     setSelectedItems([]);
@@ -163,6 +373,7 @@ const ProgTarjetaMultiflota = () => {
   const handleChange = (e) => {
     const { value, valor, item } = e.target.dataset;
 
+    let nuevoValor = valor;
     const elFechaActivacion = elementosRef.current
       .filter(Boolean)
       .find((el) => el.dataset.item === "3");
@@ -172,6 +383,13 @@ const ProgTarjetaMultiflota = () => {
       .find((el) => el.dataset.item === "4");
 
     if (item === "5") {
+      nuevoValor =
+        e.target.type === "checkbox"
+          ? e.target.checked
+            ? "1"
+            : "0"
+          : e.target.dataset.valor;
+
       const elemento = elementosRef.current
         .filter(Boolean)
         .find((el) => el.dataset.item === item);
@@ -184,22 +402,38 @@ const ProgTarjetaMultiflota = () => {
         .toISOString()
         .split("T")[0];
 
-      if (estaChecked) {
-        elFechaActivacion.value = fechaLocal;
+      if (elFechaActivacion.dataset.valor === "") {
+        if (estaChecked) {
+          elFechaActivacion.value = fechaLocal;
+          elFechaActivacion.dataset.value = fechaLocal;
+        } else {
+          elFechaActivacion.value = "";
+          elFechaActivacion.dataset.value = "";
+        }
       } else {
-        elFechaActivacion.value = "";
+        if (estaChecked) {
+          elFechaCancelacion.value = "";
+          elFechaCancelacion.dataset.value = "";
+        } else {
+          elFechaCancelacion.value = fechaLocal;
+          elFechaCancelacion.dataset.value = fechaLocal;
+        }
       }
     }
 
     setDatasets((prev) => ({
       ...prev,
-      [item]: { value, valor, item },
+      [item]: { value, valor: nuevoValor, item },
     }));
   };
 
   const llenarCombos = (valor) => {
     const lista = mapaListas?.[valor] ?? [];
     return lista;
+  };
+
+  const handleGuardarClick = () => {
+    setShowConfirm(true);
   };
 
   useEffect(() => {
@@ -223,6 +457,12 @@ const ProgTarjetaMultiflota = () => {
 
   return (
     <>
+      <div className="text-xl font-bold mb-4 text-green-800 flex items-center justify-between gap-2">
+        <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
+          MANTENIMIENTO DE TARJETAS MULTIFLOTA :
+        </h2>
+        <span className="text-green-800">{isEdit ? "EDITAR" : "NUEVO"}</span>
+      </div>
       {agrupado.map(
         (grupo) =>
           grupo.items.length > 0 && (
@@ -356,6 +596,68 @@ const ProgTarjetaMultiflota = () => {
             </div>
           ),
       )}
+      {!isEdit && (
+        <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
+          HISTORIAL DE CAMBIOS DE TARJETAS MULTIFLOTA :
+        </h2>
+      )}
+      <div className="mb-4 flex-1 min-h-0 overflow-y-auto pr-2">
+        {isEdit && (
+          <div
+            style={{
+              maxHeight: "50vh",
+              overflowY: "auto",
+              border: "1px solid #e5e7eb",
+              borderRadius: "0.5rem",
+            }}
+          >
+            <BaseTablaMatriz2
+              configTable={configTable}
+              handleRadioClick={() => {}}
+              handleCheckDelete={() => {}}
+              isEditing={false}
+              onSelect={() => {}}
+            />
+          </div>
+        )}
+      </div>
+      <div className="mt-8 mb-2">
+        {mensajeError && (
+          <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">
+            {mensajeError}
+          </div>
+        )}
+        {mensajeToast && (
+          <div
+            className={`mt-3 p-3 text-sm rounded-md shadow-md ${
+              tipoToast === "success"
+                ? "bg-green-700 text-white animate-bounce"
+                : "bg-red-400 text-white animate-bounce"
+            }`}
+          >
+            {mensajeToast}
+          </div>
+        )}
+        <div className="flex justify-between items-center w-full gap-4 mt-8 mb-2">
+          <CustomElement
+            typeCode={120}
+            onClick={handleGuardarClick}
+            className="!w-auto"
+          >
+            GRABAR
+          </CustomElement>
+        </div>
+        {showConfirm && (
+          <ConfirmDialog
+            message="¿Deseas guardar los cambios?"
+            onConfirm={() => {
+              setShowConfirm(false);
+              handleClick();
+            }}
+            onCancel={() => setShowConfirm(false)}
+          />
+        )}
+      </div>
     </>
   );
 };

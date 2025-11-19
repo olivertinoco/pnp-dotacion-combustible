@@ -272,6 +272,23 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet("/Home/TraerTarjetaMultiflotaParam")]
+    public string TraerTarjetaMultiflotaParam(string dato)
+    {
+        try
+        {
+            string rpta = "";
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_listar_vehiculo_tarjeta_multiflota", "@data", dato);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
     [HttpPost("/Home/TraerTarjetaMultiflotaPlacaInterna")]
     public string TraerTarjetaMultiflotaPlacaInterna()
     {
