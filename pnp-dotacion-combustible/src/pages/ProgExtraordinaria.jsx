@@ -74,7 +74,7 @@ const ProgExtraordinaria = () => {
   };
 
   // ===============================
-  // NOTA: DATA QUE VIENE DE OTRA
+  // NOTA: DATA QUE VIENE DE OTRA PAGINA
   // ===============================
   const selectedItems = useSelectStore((state) => state.selectedItems);
   const onceRef = useRef(false);
