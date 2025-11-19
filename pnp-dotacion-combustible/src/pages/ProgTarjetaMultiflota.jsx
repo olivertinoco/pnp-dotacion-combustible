@@ -20,6 +20,7 @@ const ProgTarjetaMultiflota = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [mensajeToast, setMensajeToast] = useState("");
   const [tipoToast, setTipoToast] = useState("success");
+  const [showNewTarjeta, setShowNewTarjeta] = useState(false);
 
   const elementosRef = useRef([]);
 
@@ -176,12 +177,12 @@ const ProgTarjetaMultiflota = () => {
       "|" +
       nuevosCampos.join("|");
 
-    console.log("GRABANDO...", dataEnviarCabecera);
+    // console.log("GRABANDO...", dataEnviarCabecera);
 
     const formData = new FormData();
     formData.append("data", dataEnviarCabecera);
     try {
-      const result = await runFetch("/Home/GrabarDatosVariosxxxx", {
+      const result = await runFetch("/Home/GrabarTarjetaMultiflota", {
         method: "POST",
         body: formData,
       });
@@ -199,10 +200,16 @@ const ProgTarjetaMultiflota = () => {
           elPK.dataset.value = rpta?.[0];
           if (rpta.length > 1) {
             const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
-            const arregloDetalleGuardar = arregloDetalle.slice(2);
+            const primerReg = arregloDetalle[2].split("|");
+            if (primerReg[2].trim() !== "") {
+              setShowNewTarjeta(true);
+            } else {
+              setShowNewTarjeta(false);
+            }
+
             setConfigTable((prev) => ({
               ...prev,
-              listaDatos: arregloDetalleGuardar,
+              listaDatos: arregloDetalle,
             }));
           }
         }
@@ -309,7 +316,8 @@ const ProgTarjetaMultiflota = () => {
             value: valor,
             item: el.dataset.item ?? "",
           };
-          // el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
         });
         return nuevo;
       });
@@ -365,6 +373,41 @@ const ProgTarjetaMultiflota = () => {
         setIdVehiculo(elementoSeleccionado[0]);
       }, 500);
     }, 1000);
+
+    setTimeout(() => {
+      const hoy = new Date();
+      const fechaLocal = new Date(
+        hoy.getTime() - hoy.getTimezoneOffset() * 60000,
+      )
+        .toISOString()
+        .split("T")[0];
+
+      const fechaActivacion = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "3");
+
+      const fechaCancelacion = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "4");
+
+      const checkBoxSel = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "5");
+
+      if (checkBoxSel) {
+        checkBoxSel.checked = true;
+        checkBoxSel.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (fechaActivacion && fechaActivacion.dataset.valor === "") {
+        fechaActivacion.dataset.value = fechaLocal;
+        fechaActivacion.value = fechaLocal;
+      }
+      if (fechaCancelacion && fechaCancelacion.dataset.valor === "") {
+        setShowNewTarjeta(false);
+      } else {
+        setShowNewTarjeta(true);
+      }
+    }, 2000);
 
     const { setSelectedItems } = useSelectStore.getState();
     setSelectedItems([]);
@@ -425,6 +468,32 @@ const ProgTarjetaMultiflota = () => {
       ...prev,
       [item]: { value, valor: nuevoValor, item },
     }));
+  };
+
+  const handleNuevaTarjeta = () => {
+    const items = ["10", "2", "3", "4", "5"];
+    const elFechCan = elementosRef.current
+      .filter(Boolean)
+      .find((el) => el?.dataset?.item === "4");
+    if (elFechCan && elFechCan.dataset.valor !== "") {
+      items.forEach((item) => {
+        const elemento = elementosRef.current
+          .filter(Boolean)
+          .find((el) => el?.dataset?.item === item);
+        if (elemento) {
+          elemento.value = "";
+          elemento.dataset.value = "";
+          elemento.dataset.valor = "";
+          if (elemento.type === "checkbox") {
+            elemento.checked = false;
+          }
+          elemento.dispatchEvent(new Event("input", { bubbles: true }));
+          elemento.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+    } else {
+      alert("La tarjeta debe estar cancelada para poder crear una nueva");
+    }
   };
 
   const llenarCombos = (valor) => {
@@ -595,6 +664,17 @@ const ProgTarjetaMultiflota = () => {
               </div>
             </div>
           ),
+      )}
+      {showNewTarjeta && (
+        <div className="flex justify-between items-center w-full gap-4 mt-8 mb-2">
+          <CustomElement
+            typeCode={120}
+            onClick={handleNuevaTarjeta}
+            className="!w-auto"
+          >
+            NUEVA TARJETA MULTIFLOTA
+          </CustomElement>
+        </div>
       )}
       {!isEdit && (
         <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">

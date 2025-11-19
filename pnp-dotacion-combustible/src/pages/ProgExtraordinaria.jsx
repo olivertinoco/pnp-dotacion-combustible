@@ -385,7 +385,7 @@ const ProgExtraordinaria = () => {
 
     const formEnviar = dataEnviarCabecera + "^" + envioDatosDetalle;
 
-    console.log("formEnviar", formEnviar);
+    // console.log("formEnviar", formEnviar);
 
     if (dataEnviarCabecera.trim() === "" && envioDatosDetalle.trim() === "")
       return;

@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 
-const PageBase = () => {
+const MtoServiciosVehiculosLR = () => {
   const location = useLocation();
   const usuario = location.state?.value;
 
@@ -12,4 +12,4 @@ const PageBase = () => {
   );
 };
 
-export default PageBase;
+export default MtoServiciosVehiculosLR;
