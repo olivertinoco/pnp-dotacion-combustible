@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
+import Loader from "../components/Loader";
 import ExcelUploader from "../components/ExcelUploader";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -18,6 +19,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [mensajeToast, setMensajeToast] = useState("");
   const [tipoToast, setTipoToast] = useState("success");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setResultadoGlobal([]);
@@ -34,6 +36,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
 
     const resultado = [];
     const invalidas = [];
+    const contadorNroTarjeta = {};
 
     rows.forEach((fila, idx) => {
       const pos = idx + 2;
@@ -45,8 +48,19 @@ const ProgTarjetaMultiflotaMasivo = () => {
         invalidas.push(filaUnida);
         return;
       }
+
+      const nroTarjeta = valores[2];
+      if (!contadorNroTarjeta[nroTarjeta]) {
+        contadorNroTarjeta[nroTarjeta] = [];
+      }
+      contadorNroTarjeta[nroTarjeta].push(filaUnida);
+
       resultado.push(filaUnida);
     });
+
+    const duplicadoTarjeta = Object.values(contadorNroTarjeta)
+      .filter((item) => item.length > 1)
+      .flat();
 
     const cabeceras = [
       "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota",
@@ -56,6 +70,10 @@ const ProgTarjetaMultiflotaMasivo = () => {
     if (invalidas.length > 0) {
       invalidas.unshift(cabeceras);
       setResultadoGlobal(invalidas.flat());
+      setObservado(true);
+    } else if (duplicadoTarjeta.length > 0) {
+      duplicadoTarjeta.unshift(cabeceras);
+      setResultadoGlobal(duplicadoTarjeta.flat());
       setObservado(true);
     } else {
       resultado.unshift(cabeceras);
@@ -104,11 +122,13 @@ const ProgTarjetaMultiflotaMasivo = () => {
   };
 
   const handleClickGuardarMasivo = async () => {
+    setIsLoading(true);
     const datosMandar = resultadoGlobal.slice(2).map((item) => {
       const [_, ...datosEnv] = item.split("|");
       return datosEnv.join("|");
     });
 
+    let timmer = 2000;
     const dataEnviarCabecera = datosMandar.join("~");
     const formData = new FormData();
     formData.append("data", dataEnviarCabecera);
@@ -119,36 +139,48 @@ const ProgTarjetaMultiflotaMasivo = () => {
       });
 
       if (result) {
+        setIsLoading(false);
         setMensajeToast("Datos Guardados Correctamente ...");
         setTipoToast("success");
         setIsEdit(true);
 
         if (result.trim() !== "ok") {
-          const cabeceras = [
-            "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota",
-            "50|200|200|400",
-          ];
-          const rpta = result.trim().split("~");
-          const dataError = rpta.map((item, idx) => {
-            return `${idx + 1}|${item}`;
-          });
-          const listaRpta = [...cabeceras, ...dataError];
-          setConfigTable((prev) => ({
-            ...prev,
-            listaDatos: listaRpta,
-          }));
+          if (result.trim().startsWith("error")) {
+            setMensajeToast(
+              "El archivo excel tiene DUPLICADO DE Nro PLACA INTERNA. Corrija los datos...!!!",
+            );
+            setTipoToast("warning");
+            handleClickCarga();
+            timmer = 10000;
+          } else {
+            const cabeceras = [
+              "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|OBSERVACION",
+              "50|200|200|400|500",
+            ];
+
+            const rpta = result.trim().split("~");
+            const dataError = rpta.map((item, idx) => {
+              return `${idx + 1}|${item}`;
+            });
+            const listaRpta = [...cabeceras, ...dataError];
+            setConfigTable((prev) => ({
+              ...prev,
+              listaDatos: listaRpta,
+            }));
+          }
         } else {
           handleClickCarga();
         }
       }
     } catch (err) {
+      setIsLoading(false);
       console.error(err);
       setMensajeToast("Error al guardar la informacion ...");
       setTipoToast("error");
     } finally {
       setTimeout(() => {
         setMensajeToast("");
-      }, 2000);
+      }, timmer);
     }
   };
 
@@ -156,6 +188,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
 
   return (
     <>
+      {isLoading && <Loader />}
       <div className="text-xl font-bold mb-4 text-green-800 flex items-center justify-between gap-2">
         <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
           CARGA MASIVA DE LAS TARJETAS MULTIFLOTA :
@@ -169,7 +202,9 @@ const ProgTarjetaMultiflotaMasivo = () => {
           className={`mt-3 p-3 text-sm rounded-md shadow-md ${
             tipoToast === "success"
               ? "bg-green-700 text-white animate-bounce"
-              : "bg-red-400 text-white animate-bounce"
+              : tipoToast === "warning"
+                ? "bg-yellow-400 text-black animate-bounce"
+                : "bg-red-400 text-white animate-bounce"
           }`}
         >
           {mensajeToast}
@@ -203,14 +238,15 @@ const ProgTarjetaMultiflotaMasivo = () => {
       )}
       {!isEdit && (
         <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
-          LISTADO DE CARGA MASIVA DE TARJETAS MULTIFLOTA :
+          Listado con formato XLXS : ( PLACA INTERNA - - PLACA RODAJE - - Nro
+          TARJETA )
         </h2>
       )}
       <div className="mb-4 flex-1 min-h-0 overflow-y-auto pr-2">
         {isEdit && (
           <div
             style={{
-              maxHeight: "50vh",
+              maxHeight: "80vh",
               overflowY: "auto",
               border: "1px solid #e5e7eb",
               borderRadius: "0.5rem",
