@@ -170,14 +170,31 @@ const ProgTarjetaMultiflota = () => {
       nuevosData.unshift(value);
     });
 
+    const nroTarjetaMultipago = nuevosData?.[2] ?? "";
+    const nroTarjetaDuplicado = configTable.listaDatos
+      .slice(2)
+      .filter((item) => {
+        const dato = item.split("|");
+        return String(dato[0] ?? "").trim() === nroTarjetaMultipago;
+      });
+
+    if (nroTarjetaDuplicado && nroTarjetaDuplicado.length > 0) {
+      setMensajeToast(
+        "No se permite Nro Tarjeta Duplicado, por favor verifique ...",
+      );
+      setTipoToast("warning");
+      setTimeout(() => {
+        setMensajeToast("");
+      }, 3000);
+      return;
+    }
+
     dataEnviarCabecera =
       usuario.trim() +
       "~" +
       nuevosData.join("|") +
       "|" +
       nuevosCampos.join("|");
-
-    // console.log("GRABANDO...", dataEnviarCabecera);
 
     const formData = new FormData();
     formData.append("data", dataEnviarCabecera);
@@ -188,6 +205,18 @@ const ProgTarjetaMultiflota = () => {
       });
 
       if (result) {
+        if (result.trim().startsWith("duplicado")) {
+          setMensajeToast(
+            "El nro de Tarjeta ya existe, por favor verifique ...",
+          );
+          setTipoToast("warning");
+          setIsEdit(true);
+          setTimeout(() => {
+            setMensajeToast("");
+          }, 3000);
+          return;
+        }
+
         setMensajeToast("Datos Guardados Correctamente ...");
         setTipoToast("success");
         setIsEdit(true);
@@ -631,8 +660,6 @@ const ProgTarjetaMultiflota = () => {
                                     [metadata[6]]: value,
                                   }));
                                 },
-                                // usarHardcodedExterno:
-                                //   usarHardcodedExternoMap[metadata[6]] ?? false,
                               }
                             : {
                                 defaultValue: datos.data,
@@ -712,7 +739,9 @@ const ProgTarjetaMultiflota = () => {
             className={`mt-3 p-3 text-sm rounded-md shadow-md ${
               tipoToast === "success"
                 ? "bg-green-700 text-white animate-bounce"
-                : "bg-red-400 text-white animate-bounce"
+                : tipoToast === "warning"
+                  ? "bg-yellow-400 text-black animate-bounce"
+                  : "bg-red-400 text-white animate-bounce"
             }`}
           >
             {mensajeToast}
