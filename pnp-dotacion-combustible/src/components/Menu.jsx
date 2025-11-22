@@ -15,6 +15,7 @@ import {
 import { useData } from "../context/DataProvider";
 import { useNavigateTo } from "../utils/useNavigateTo";
 import { Outlet } from "react-router-dom";
+import { useMenuTrigger } from "../context/MenuTriggerContext";
 
 export default function Menu() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,6 +32,7 @@ export default function Menu() {
     setOpenSubItem((prev) => (prev === codigo ? null : codigo));
 
   const { data } = useData();
+  const { fireMenuTrigger } = useMenuTrigger();
 
   const [posId, ...newData] = data;
 
@@ -56,6 +58,7 @@ export default function Menu() {
 
   const handleSubItem = (codigoSubMenu, nombreSubMenu, nombreMenu) => {
     setSelectedNames({ menu: nombreMenu, sub: nombreSubMenu });
+    fireMenuTrigger();
     let child = `/menu/${codigoSubMenu}-repo`;
     navigateTo(child, { state: { value: posId } });
   };
