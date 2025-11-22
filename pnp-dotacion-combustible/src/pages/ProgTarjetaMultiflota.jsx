@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
 import useValidationFields from "../hooks/useValidationFields";
+import { useMenuTrigger } from "../context/MenuTriggerContext";
 
 const ProgTarjetaMultiflota = () => {
   const location = useLocation();
@@ -21,6 +22,7 @@ const ProgTarjetaMultiflota = () => {
   const [mensajeToast, setMensajeToast] = useState("");
   const [tipoToast, setTipoToast] = useState("success");
   const [showNewTarjeta, setShowNewTarjeta] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const elementosRef = useRef([]);
 
@@ -30,6 +32,55 @@ const ProgTarjetaMultiflota = () => {
 
   const validacion = useValidationFields(elementosRef);
   const { handleClick, mensajeError, esValido, valoresCambiados } = validacion;
+  const { menuTrigger } = useMenuTrigger();
+
+  const limpiarEstadoInicial = () => {
+    setDatasets({});
+    setForcedOption({});
+    setOptionFlag({});
+    setIsEdit(false);
+    setConfigTable({});
+    setIdVehiculo("");
+    setShowConfirm(false);
+    setMensajeToast("");
+    setTipoToast("success");
+    setShowNewTarjeta(false);
+
+    elementosRef.current.forEach((el) => {
+      if (!el) return;
+      el.value = "";
+      el.dataset.value = "";
+      el.dataset.valor = "";
+      if (el.type === "checkbox") el.checked = false;
+    });
+
+    const items = ["990", "991"];
+    items.forEach((item) => {
+      setRefreshKey((k) => k + 1);
+      const el = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el.dataset.item === item);
+      if (el && el.tagName === "SELECT") {
+        setForcedOption((prev) => ({
+          ...prev,
+          [item]: {
+            value: "",
+            label: "",
+          },
+        }));
+        setOptionFlag((prev) => ({
+          ...prev,
+          [item]: 0,
+        }));
+      }
+    });
+    elementosRef.current = [];
+    useSelectStore.setState({ selectedItems: [] });
+  };
+
+  useEffect(() => {
+    limpiarEstadoInicial();
+  }, [menuTrigger]);
 
   const handleBuscarClick = async (parametro) => {
     const valorParametro = `zz|${parametro}`;
@@ -317,9 +368,24 @@ const ProgTarjetaMultiflota = () => {
     console.log("handlePopup");
   };
 
-  const handlePopupClose = (item) => {
+  const waitForRefs = () =>
+    new Promise((resolve) => {
+      const check = () => {
+        if (elementosRef.current.length > 0) resolve();
+        else requestAnimationFrame(check);
+      };
+      check();
+    });
+
+  const findRef = (item) =>
+    elementosRef.current?.find?.((el) => el?.dataset?.item === item) ?? null;
+
+  const handlePopupClose = async (item) => {
+    await waitForRefs();
+
     const { selectedItems } = useSelectStore.getState();
     if (!selectedItems || selectedItems.length === 0) return;
+
     const elementoSeleccionado = selectedItems[0];
     const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
 
@@ -328,43 +394,39 @@ const ProgTarjetaMultiflota = () => {
       return { item, indice: Number(indice) };
     });
 
-    setTimeout(() => {
-      setDatasets((prev) => {
-        const nuevo = { ...prev };
-        camposActualizar.forEach(({ item, indice }) => {
-          const el = elementosRef?.current?.[item];
-          if (!el) return;
-          const valor = elementoSeleccionado[indice] ?? "";
-          el.value = valor;
-          el.dataset.value = valor;
+    setDatasets((prev) => {
+      const nuevo = { ...prev };
+      camposActualizar.forEach(({ item, indice }) => {
+        const el = findRef(item);
+        if (!el) return;
+        const valor = elementoSeleccionado[indice] ?? "";
+        el.value = valor;
+        el.dataset.value = valor;
 
-          const anterior = prev[item] ?? {};
+        const anterior = prev[item] ?? {};
 
-          nuevo[item] = {
-            ...anterior,
-            value: valor,
-            item: el.dataset.item ?? "",
-          };
-          el.dispatchEvent(new Event("input", { bubbles: true }));
-          el.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-        return nuevo;
+        nuevo[item] = {
+          ...anterior,
+          value: valor,
+          item: el.dataset.item ?? "",
+        };
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
       });
-    }, 600);
+      return nuevo;
+    });
 
     setTimeout(() => {
-      const hiddenVH = elementosRef.current
-        .filter(Boolean)
-        .find((el) => el?.dataset.item === "11");
-      hiddenVH.dataset.value = elementoSeleccionado[0];
-      hiddenVH.value = elementoSeleccionado[0];
+      const hiddenVH = findRef("11");
+      if (hiddenVH) {
+        hiddenVH.dataset.value = elementoSeleccionado[0];
+        hiddenVH.value = elementoSeleccionado[0];
+      }
     }, 500);
 
     setTimeout(() => {
       const item990 = "990";
-      const elemento = elementosRef.current
-        .filter(Boolean)
-        .find((ele) => ele?.dataset?.item === item990);
+      const elemento = findRef(item990);
       if (elemento && elemento.tagName === "SELECT") {
         elemento.dataset.value = elementoSeleccionado[1];
         setForcedOption((prev) => ({
@@ -381,9 +443,7 @@ const ProgTarjetaMultiflota = () => {
       }
 
       const item991 = "991";
-      const elemento2 = elementosRef.current
-        .filter(Boolean)
-        .find((ele) => ele?.dataset?.item === item991);
+      const elemento2 = findRef(item991);
       if (elemento2 && elemento2.tagName === "SELECT") {
         elemento2.dataset.value = elementoSeleccionado[2];
         setForcedOption((prev) => ({
@@ -411,17 +471,9 @@ const ProgTarjetaMultiflota = () => {
         .toISOString()
         .split("T")[0];
 
-      const fechaActivacion = elementosRef.current
-        .filter(Boolean)
-        .find((el) => el?.dataset?.item === "3");
-
-      const fechaCancelacion = elementosRef.current
-        .filter(Boolean)
-        .find((el) => el?.dataset?.item === "4");
-
-      const checkBoxSel = elementosRef.current
-        .filter(Boolean)
-        .find((el) => el?.dataset?.item === "5");
+      const fechaActivacion = findRef("3");
+      const fechaCancelacion = findRef("4");
+      const checkBoxSel = findRef("5");
 
       if (checkBoxSel) {
         checkBoxSel.checked = true;
@@ -592,7 +644,7 @@ const ProgTarjetaMultiflota = () => {
 
                   return (
                     <div
-                      key={idx}
+                      key={`${idx}-${refreshKey}`}
                       className={`${colSpanMap[metadata?.[10]] ?? "col-span-1"} min-w-0`}
                     >
                       <CustomElement

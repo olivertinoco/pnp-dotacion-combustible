@@ -248,12 +248,12 @@ const PopupBusqueda = forwardRef(
               {isSubmitting ? "BUSCANDO..." : "BUSCAR"}
             </CustomElement>
           </div>
-          {mensajeError && (
+          {mensajeError && tipoToast !== "success" && (
             <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">
               {mensajeError}
             </div>
           )}
-          {mensajeToast && (
+          {mensajeToast && tipoToast !== "success" && (
             <div
               className={`mt-3 p-3 text-sm rounded-md shadow-md ${
                 tipoToast === "success"
@@ -264,7 +264,6 @@ const PopupBusqueda = forwardRef(
               {mensajeToast}
             </div>
           )}
-
           <div className="mb-4 flex-1 min-h-0 overflow-y-auto pr-2">
             {popupContent && (
               <div
@@ -317,7 +316,6 @@ const PopupBusqueda = forwardRef(
               </div>
             )}
           </div>
-
           <div className="flex justify-end mt-4">
             <button
               onClick={onClose}
