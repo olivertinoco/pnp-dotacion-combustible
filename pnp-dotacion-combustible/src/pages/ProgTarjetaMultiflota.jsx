@@ -222,21 +222,38 @@ const ProgTarjetaMultiflota = () => {
     });
 
     const nroTarjetaMultipago = nuevosData?.[2] ?? "";
-    const nroTarjetaDuplicado = configTable.listaDatos
-      .slice(2)
-      .filter((item) => {
-        const dato = item.split("|");
-        return String(dato[0] ?? "").trim() === nroTarjetaMultipago;
-      });
 
-    if (nroTarjetaDuplicado && nroTarjetaDuplicado.length > 0) {
-      setMensajeToast(
-        "No se permite Nro Tarjeta Duplicado, por favor verifique ...",
-      );
-      setTipoToast("warning");
-      setTimeout(() => {
-        setMensajeToast("");
-      }, 3000);
+    if ((configTable?.listaDatos ?? []).length > 0) {
+      const nroTarjetaDuplicado = configTable.listaDatos
+        .slice(2)
+        .filter((item) => {
+          const dato = item.split("|");
+          return String(dato[0] ?? "").trim() === nroTarjetaMultipago;
+        });
+
+      if (nroTarjetaDuplicado && nroTarjetaDuplicado.length > 0) {
+        setMensajeToast(
+          "No se permite Nro Tarjeta Duplicado, por favor verifique ...",
+        );
+        setTipoToast("warning");
+        setTimeout(() => {
+          setMensajeToast("");
+        }, 3000);
+        return;
+      }
+    }
+
+    const dataValidar = (nuevosCampos ?? []).reduce((acc, key, i) => {
+      acc[key] = nuevosData[i];
+      return acc;
+    }, {});
+
+    if (
+      dataValidar["7.6"] !== undefined &&
+      dataValidar["7.7"] === undefined &&
+      (dataValidar["7.8"] === undefined || dataValidar["7.8"] === "0")
+    ) {
+      alert("Debe Activar la Tarjeta");
       return;
     }
 
@@ -552,11 +569,11 @@ const ProgTarjetaMultiflota = () => {
   };
 
   const handleNuevaTarjeta = () => {
-    const items = ["10", "2", "3", "4", "5"];
     const elFechCan = elementosRef.current
       .filter(Boolean)
       .find((el) => el?.dataset?.item === "4");
     if (elFechCan && elFechCan.dataset.valor !== "") {
+      let items = ["10", "2", "3", "4", "5"];
       items.forEach((item) => {
         const elemento = elementosRef.current
           .filter(Boolean)
@@ -570,6 +587,15 @@ const ProgTarjetaMultiflota = () => {
           }
           elemento.dispatchEvent(new Event("input", { bubbles: true }));
           elemento.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+      items = ["990", "991"];
+      items.forEach((item) => {
+        const elemento = elementosRef.current
+          .filter(Boolean)
+          .find((el) => el?.dataset?.item === item);
+        if (elemento) {
+          elemento.dataset.valor = "";
         }
       });
     } else {
