@@ -20,6 +20,7 @@
     <None Include=".env" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+
   <ItemGroup>
     <Compile Remove="pnp-dotacion-combustible/**" />
     <Content Remove="pnp-dotacion-combustible/**" />

@@ -34,5 +34,26 @@ public class PageController : Controller
         }
     }
 
+    [HttpGet("/Page/DescargarPlantillaMultiflota")]
+    public IActionResult DescargarPlantilla()
+    {
+        try
+        {
+            var filePath = Path.Combine(_env.WebRootPath, "files", "plantilla.xlsx");
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("No existe la plantilla.");
+
+            }
+            var mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            return PhysicalFile(filePath, mime, "plantilla.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return StatusCode(500, "Ocurrió un error al descargar la plantilla.");
+        }
+    }
+
 
 }

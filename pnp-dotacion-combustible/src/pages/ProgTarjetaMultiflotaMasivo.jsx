@@ -20,6 +20,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
   const [mensajeToast, setMensajeToast] = useState("");
   const [tipoToast, setTipoToast] = useState("success");
   const [isLoading, setIsLoading] = useState(false);
+  const [disabledExcel, setDisabledExcel] = useState(false);
 
   useEffect(() => {
     setResultadoGlobal([]);
@@ -80,13 +81,13 @@ const ProgTarjetaMultiflotaMasivo = () => {
       setResultadoGlobal(resultado.flat());
       setObservado(false);
     }
+
+    setDisabledExcel(true);
   };
 
   const handleNuevaTarjeta = () => {
     if (resultadoGlobal.length > 0) {
-      const titulo = observado
-        ? "LISTA OBSERVADA DE CARGA MASIVA DE TARJETAS MULTIFLOTA:"
-        : "RESULTADO DE CARGA MASIVA DE TARJETAS MULTIFLOTA:";
+      const titulo = "RESULTADO DE CARGA MASIVA DE TARJETAS MULTIFLOTA:";
       setConfigTable((prev) => ({
         ...prev,
         title: titulo,
@@ -95,11 +96,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
         offsetColumnas: 0,
       }));
       setIsEdit(true);
-      if (observado) {
-        setProcesar(false);
-      } else {
-        setProcesar(true);
-      }
+      setProcesar(true);
     } else {
       alert("Debe cargar un archivo para procesar...");
     }
@@ -115,6 +112,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
     setObservado(true);
     setProcesar(false);
     setUploaderKey(Date.now());
+    setDisabledExcel(false);
   };
 
   const handleSubirRegistros = () => {
@@ -140,9 +138,10 @@ const ProgTarjetaMultiflotaMasivo = () => {
 
       if (result) {
         setIsLoading(false);
-        setMensajeToast("Datos Guardados Correctamente ...");
+        setMensajeToast("Proceso Terminado satisfactoriamente...");
         setTipoToast("success");
         setIsEdit(true);
+        setProcesar(false);
 
         if (result.trim() !== "ok") {
           if (result.trim().startsWith("error")) {
@@ -151,7 +150,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
             );
             setTipoToast("warning");
             handleClickCarga();
-            timmer = 10000;
+            timmer = 3000;
           } else {
             const cabeceras = [
               "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|OBSERVACION",
@@ -193,9 +192,19 @@ const ProgTarjetaMultiflotaMasivo = () => {
         <h2 className="mt-4 text-lg font-semibold text-green-700 mb-4 border-b border-green-300 pb-1">
           CARGA MASIVA DE LAS TARJETAS MULTIFLOTA :
         </h2>
+        <a
+          href="/Page/DescargarPlantillaMultiflota"
+          className="mt-4 text-sm font-medium text-blue-600 underline hover:text-blue-800 transition"
+        >
+          DESCARGAR PLANTILLA EXCEL
+        </a>
       </div>
       <div className="p-4">
-        <ExcelUploader key={uploaderKey} onFileSelected={handleExcel} />
+        <ExcelUploader
+          key={uploaderKey}
+          onFileSelected={handleExcel}
+          disabled={disabledExcel}
+        />
       </div>
       {mensajeToast && (
         <div

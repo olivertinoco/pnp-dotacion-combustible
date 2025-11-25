@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 
-const ExcelUploader = ({ onFileSelected }) => {
+const ExcelUploader = ({ onFileSelected, disabled = false }) => {
   const [fileName, setFileName] = useState("");
   const inputRef = useRef(null);
 
@@ -21,6 +21,7 @@ const ExcelUploader = ({ onFileSelected }) => {
   };
 
   const openFileExplorer = () => {
+    if (disabled) return;
     inputRef.current.click();
   };
 
@@ -31,11 +32,18 @@ const ExcelUploader = ({ onFileSelected }) => {
       </label>
       <div
         onClick={openFileExplorer}
-        className="w-full p-5 border-2 border-dashed rounded-xl cursor-pointer border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 ease-in-out flex flex-col items-center justify-center gap-2"
+        className={`w-full p-5 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-200
+                  ${
+                    disabled
+                      ? "bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed select-none"
+                      : "cursor-pointer border-gray-300 hover:border-blue-500 hover:bg-blue-50"
+                  }`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="w-10 h-10 text-gray-500"
+          className={`w-10 h-10 ${
+            disabled ? "text-gray-300" : "text-gray-500"
+          }`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -47,8 +55,12 @@ const ExcelUploader = ({ onFileSelected }) => {
             d="M12 4v16m8-8H4"
           />
         </svg>
-        <p className="text-sm text-gray-600">
-          Haz clic para seleccionar un archivo Excel
+        <p
+          className={`text-sm ${disabled ? "text-gray-400" : "text-gray-600"}`}
+        >
+          {disabled
+            ? "deshabilitado para subir archivos"
+            : "Haz clic para seleccionar un archivo Excel"}
         </p>
         {fileName && (
           <p className="text-sm font-medium text-green-700 mt-1">
@@ -60,6 +72,7 @@ const ExcelUploader = ({ onFileSelected }) => {
         ref={inputRef}
         type="file"
         accept=".xls, .xlsx"
+        disabled={disabled}
         onChange={handleFileChange}
         className="hidden"
       />

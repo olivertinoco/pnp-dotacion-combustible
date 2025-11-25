@@ -232,13 +232,7 @@ const ProgTarjetaMultiflota = () => {
         });
 
       if (nroTarjetaDuplicado && nroTarjetaDuplicado.length > 0) {
-        setMensajeToast(
-          "No se permite Nro Tarjeta Duplicado, por favor verifique ...",
-        );
-        setTipoToast("warning");
-        setTimeout(() => {
-          setMensajeToast("");
-        }, 3000);
+        alert("No se permite Nro Tarjeta Duplicado, por favor verifique ...");
         return;
       }
     }
@@ -247,6 +241,15 @@ const ProgTarjetaMultiflota = () => {
       acc[key] = nuevosData[i];
       return acc;
     }, {});
+
+    const valida75 = String(dataValidar["7.5"] ?? "");
+    const regExp = /^[A-Za-z0-9]+$/;
+    if (valida75 !== "" && !regExp.test(valida75)) {
+      alert(
+        "Sólo se permiten letras (A-Z, a-z) y números (0-9). Por favor corrija.",
+      );
+      return;
+    }
 
     if (
       dataValidar["7.6"] !== undefined &&
@@ -274,47 +277,43 @@ const ProgTarjetaMultiflota = () => {
 
       if (result) {
         if (result.trim().startsWith("duplicado")) {
-          setMensajeToast(
-            "El nro de Tarjeta ya existe, por favor verifique ...",
+          alert("El nro de Tarjeta ya existe, por favor verifique ...");
+        } else if (result.trim().startsWith("existe")) {
+          alert(
+            "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
           );
-          setTipoToast("warning");
-          setIsEdit(true);
-          setTimeout(() => {
-            setMensajeToast("");
-          }, 3000);
-          return;
-        }
+        } else {
+          if (result.trim() !== "") {
+            setMensajeToast("Datos Guardados Correctamente ...");
+            setTipoToast("success");
+            setIsEdit(true);
 
-        setMensajeToast("Datos Guardados Correctamente ...");
-        setTipoToast("success");
-        setIsEdit(true);
+            const rpta = result.trim().split("^");
+            const elPK = elementosRef.current
+              .filter(Boolean)
+              .find((el) => el?.dataset?.item === "10");
+            elPK.dataset.value = rpta?.[0];
+            if (rpta.length > 1) {
+              const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
+              const primerReg = arregloDetalle[2].split("|");
+              if (primerReg[2].trim() !== "") {
+                setShowNewTarjeta(true);
+              } else {
+                setShowNewTarjeta(false);
+              }
 
-        if (result.trim() !== "") {
-          const rpta = result.trim().split("^");
-          const elPK = elementosRef.current
-            .filter(Boolean)
-            .find((el) => el?.dataset?.item === "10");
-          elPK.dataset.value = rpta?.[0];
-          if (rpta.length > 1) {
-            const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
-            const primerReg = arregloDetalle[2].split("|");
-            if (primerReg[2].trim() !== "") {
-              setShowNewTarjeta(true);
-            } else {
-              setShowNewTarjeta(false);
+              setConfigTable((prev) => ({
+                ...prev,
+                listaDatos: arregloDetalle,
+              }));
             }
-
-            setConfigTable((prev) => ({
-              ...prev,
-              listaDatos: arregloDetalle,
-            }));
           }
-        }
 
-        elementosRef.current.forEach((el) => {
-          if (!el) return;
-          el.dataset.valor = el.dataset.value ?? "";
-        });
+          elementosRef.current.forEach((el) => {
+            if (!el) return;
+            el.dataset.valor = el.dataset.value ?? "";
+          });
+        }
       }
     } catch (err) {
       console.error(err);
