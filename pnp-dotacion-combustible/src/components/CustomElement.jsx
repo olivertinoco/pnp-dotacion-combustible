@@ -414,7 +414,7 @@ const CustomElement = forwardRef(
 
       const configTable = {
         title: etiqueta,
-        isPaginar: false,
+        isPaginar: true,
         listaDatos: filteredOptionsProp,
         offsetColumnas: offsetColumnas ?? 1,
       };
