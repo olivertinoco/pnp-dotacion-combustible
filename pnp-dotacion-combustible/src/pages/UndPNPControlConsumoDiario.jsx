@@ -1,8 +1,18 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { useLocation } from "react-router-dom";
+import { useSelectStore } from "../store/selectStore";
 import CustomElement from "../components/CustomElement";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
 
 const UndPNPControlConsumoDiario = () => {
   const location = useLocation();
@@ -13,7 +23,14 @@ const UndPNPControlConsumoDiario = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const [events, setEvents] = useState([
+    { title: "Evento 1", date: "2025-11-10" },
+    { title: "Evento 2", date: "2025-11-15" },
+  ]);
+
   const elementosRef = useRef([]);
+  const calendarRef = useRef();
+  const skipAsignarRef = useRef(false);
 
   const API_RESULT_LISTAR = "/Page/Traer_prog_abastecimiento_diario";
   const { data, loading, error } = useFetch(API_RESULT_LISTAR);
@@ -67,19 +84,189 @@ const UndPNPControlConsumoDiario = () => {
     items: informacion.filter((item) => item.metadata[9] === grupo.id),
   }));
 
-  // console.log("mapaListas", mapaListas);
-  // console.log("informacion", informacion);
-
   const handlePopup = () => {
     console.log("handlePopup");
   };
 
-  const handlePopupClose = () => {
-    console.log("handlePopupClose");
+  const waitForRefs = () =>
+    new Promise((resolve) => {
+      const check = () => {
+        if (elementosRef.current.length > 0) resolve();
+        else requestAnimationFrame(check);
+      };
+      check();
+    });
+
+  const findRef = (item) =>
+    elementosRef.current?.find?.((el) => el?.dataset?.item === item) ?? null;
+
+  const getDaysOfMonth = (year, month) => {
+    const lastDay = new Date(year, month, 0).getDate();
+    const days = [];
+    for (let d = 1; d <= lastDay; d++) {
+      days.push(String(d).padStart(2, "0"));
+    }
+    return days;
   };
 
-  const handleChange = () => {
-    console.log("handleChange");
+  const asignarDias = async () => {
+    await waitForRefs();
+
+    if (skipAsignarRef.current) {
+      skipAsignarRef.current = false;
+      return;
+    }
+    skipAsignarRef.current = true;
+
+    const elAnno = findRef("1");
+    const elMess = findRef("2");
+    const elDias = findRef("3");
+
+    const anno = elAnno?.value ?? "";
+    const mess = elMess?.value ?? "";
+
+    if (anno !== "" && mess !== "") {
+      const arrayDias = getDaysOfMonth(anno, mess);
+      elDias.innerHTML = "";
+      arrayDias.forEach((item) => {
+        const opt = document.createElement("option");
+        opt.value = item;
+        opt.textContent = item;
+        elDias.appendChild(opt);
+      });
+
+      elDias.value = arrayDias[0] ?? "";
+      elDias.dataset.value = elDias.value;
+      elDias.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  };
+
+  const moverCalendario = () => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+
+    const elAnno = findRef("1");
+    const elMess = findRef("2");
+
+    const year = elAnno?.value ?? "";
+    const month = elMess?.value ?? "";
+
+    if (year !== "" && month !== "") {
+      api.gotoDate(`${year}-${String(month).padStart(2, "0")}-01`);
+    }
+  };
+
+  useLayoutEffect(() => {
+    asignarDias();
+  }, []);
+
+  useEffect(() => {
+    waitForRefs().then(() => {
+      const elAnno = findRef("1");
+      const elMess = findRef("2");
+
+      if (elAnno) elAnno.addEventListener("change", moverCalendario);
+      if (elMess) elMess.addEventListener("change", moverCalendario);
+    });
+  }, []);
+
+  const handlePopupClose = async (item) => {
+    await waitForRefs();
+    const valoresValidos = ["992", "993"];
+
+    if (valoresValidos.includes(item)) {
+      const { selectedItems } = useSelectStore.getState();
+      if (!selectedItems || selectedItems.length === 0) return;
+
+      const elementoSeleccionado = selectedItems[0];
+      const listas = mapaListas[item]?.slice(1)?.[0]?.split("*") ?? [];
+
+      const camposActualizar = listas.map((str) => {
+        const [item, indice] = str.split("|");
+        return { item, indice: Number(indice) };
+      });
+
+      setDatasets((prev) => {
+        const nuevo = { ...prev };
+        camposActualizar.forEach(({ item, indice }) => {
+          const el = findRef(item);
+          if (!el) return;
+          const valor = elementoSeleccionado[indice] ?? "";
+          el.value = valor;
+          el.dataset.value = valor;
+
+          const anterior = prev[item] ?? {};
+
+          nuevo[item] = {
+            ...anterior,
+            value: valor,
+            item: el.dataset.item ?? "",
+          };
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        return nuevo;
+      });
+
+      setTimeout(() => {
+        const hiddenVH = findRef("11");
+        if (hiddenVH) {
+          hiddenVH.dataset.value = elementoSeleccionado[0];
+          hiddenVH.value = elementoSeleccionado[0];
+        }
+        const hiddenVHTARJ = findRef("12");
+        if (hiddenVHTARJ) {
+          hiddenVHTARJ.dataset.value = elementoSeleccionado[8];
+          hiddenVHTARJ.value = elementoSeleccionado[8];
+        }
+      }, 500);
+
+      setTimeout(() => {
+        const item990 = "992";
+        const elemento = findRef(item990);
+        if (elemento && elemento.tagName === "SELECT") {
+          elemento.dataset.value = elementoSeleccionado[1];
+          setForcedOption((prev) => ({
+            ...prev,
+            [item990]: {
+              value: elementoSeleccionado[1],
+              label: elementoSeleccionado[1],
+            },
+          }));
+          setOptionFlag((prev) => ({
+            ...prev,
+            [item990]: 1,
+          }));
+        }
+
+        const item991 = "993";
+        const elemento2 = findRef(item991);
+        if (elemento2 && elemento2.tagName === "SELECT") {
+          elemento2.dataset.value = elementoSeleccionado[2];
+          setForcedOption((prev) => ({
+            ...prev,
+            [item991]: {
+              value: elementoSeleccionado[2],
+              label: elementoSeleccionado[2],
+            },
+          }));
+          setOptionFlag((prev) => ({
+            ...prev,
+            [item991]: 1,
+          }));
+        }
+      }, 1000);
+
+      const { setSelectedItems } = useSelectStore.getState();
+      setSelectedItems([]);
+    }
+  };
+
+  const handleChange = (item) => {
+    const elementos = ["1", "2"];
+    if (elementos.includes(item)) {
+      asignarDias();
+    }
   };
 
   const llenarCombos = (valor) => {
@@ -98,7 +285,7 @@ const UndPNPControlConsumoDiario = () => {
   }
 
   const urlMap = {
-    990: "/Home/TraerDatosProgUnidadesAyudas",
+    990: "/Page/Buscar_prog_abastecimiento_diario_unidad",
     992: "/Page/Buscar_prog_abastecimiento_diario_placa_interna",
     993: "/Page/Buscar_prog_abastecimiento_diario_placa_rodaje",
   };
@@ -220,7 +407,7 @@ const UndPNPControlConsumoDiario = () => {
                           campo: metadata[0],
                           item: metadata[6],
                         }}
-                        onChange={handleChange}
+                        onChange={() => handleChange(metadata[6])}
                         {...(mapaListas[metadata[6]] ||
                         datasets[metadata[0]]?.listaAux
                           ? {
@@ -242,6 +429,41 @@ const UndPNPControlConsumoDiario = () => {
             </div>
           ),
       )}
+      <div style={{ width: "100%", margin: "0 auto" }}>
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin]}
+          initialView="dayGridMonth"
+          events={events}
+          height="auto"
+          locale="es"
+          headerToolbar={{
+            left: "",
+            center: "title",
+            right: "",
+          }}
+          eventClick={(info) => {
+            alert(`Hiciste clic en: ${info.event.title}`);
+          }}
+          datesSet={(info) => {
+            const fechaVisibleInicio = info.start;
+            const fechaMesReal = info.view.calendar.getDate();
+            const elAnno = findRef("1");
+            const elMess = findRef("2");
+            if (elAnno && elMess) {
+              elAnno.value = fechaVisibleInicio.getFullYear();
+              elAnno.dataset.value = elAnno.value;
+              const mesSeleccion = String(fechaMesReal.getMonth() + 1).padStart(
+                2,
+                "0",
+              );
+              elMess.value = mesSeleccion;
+              elMess.dataset.value = mesSeleccion;
+              asignarDias();
+            }
+          }}
+        />
+      </div>
     </>
   );
 };
