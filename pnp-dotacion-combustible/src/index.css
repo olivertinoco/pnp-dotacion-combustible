@@ -35,6 +35,11 @@
         font-weight: 200;
     }
 
+    .fc-toolbar-title {
+        color: #111827; /* text-gray-900 */
+        font-weight: 700; /* font-bold */
+    }
+
     /* --- Custom Leaflet LayersControl Toggle Icon --- */
     .leaflet-control-layers-toggle::after {
         content: "";

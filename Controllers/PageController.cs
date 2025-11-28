@@ -109,4 +109,22 @@ public class PageController : Controller
         }
     }
 
+    [HttpPost("/Page/Buscar_prog_abastecimiento_diario_unidad")]
+    public string Buscar_prog_abastecimiento_diario_unidad()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_buscar_unidad_prog_abastecimiento_diario", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
 }
