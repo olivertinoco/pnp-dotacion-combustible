@@ -5,6 +5,20 @@ import pages from "./pages";
 import PrivateRoute from "./context/PrivateRoute";
 import { useData } from "./context/DataProvider";
 import { MenuTriggerProvider } from "./context/MenuTriggerContext";
+import { useEffect, useState } from "react";
+
+function LazyPage({ loader, children }) {
+  const [Comp, setComp] = useState(null);
+  useEffect(() => {
+    let active = true;
+    loader().then((mod) => active && setComp(() => mod));
+    return () => {
+      active = false;
+    };
+  }, [loader]);
+  if (!Comp) return <div>Cargando…</div>;
+  return <Comp>{children}</Comp>;
+}
 
 export default function App() {
   const { data } = useData();
@@ -27,12 +41,12 @@ export default function App() {
               .filter((val) => val.split("|")[2] != "")
               .map((row) => {
                 const [path, _, componentName] = row.split("|");
-                const Component = pages[componentName];
+                const ComponentLoader = pages[componentName];
                 return (
                   <Route
                     key={path}
                     path={`${path}-repo`}
-                    element={<Component />}
+                    element={<LazyPage loader={ComponentLoader} />}
                   />
                 );
               })}
@@ -42,9 +56,9 @@ export default function App() {
             path="/prog-extra-ord-base"
             element={
               <PrivateRoute>
-                <pages.PageLayout>
-                  <pages.ProgExtraordinaria />
-                </pages.PageLayout>
+                <LazyPage loader={pages.PageLayout}>
+                  <LazyPage loader={pages.ProgExtraordinaria} />
+                </LazyPage>
               </PrivateRoute>
             }
           />
