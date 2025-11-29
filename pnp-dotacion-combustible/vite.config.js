@@ -1,9 +1,8 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,18 +15,21 @@ export default defineConfig(({ command }) => {
     root: resolve(__dirname, "src"),
     publicDir: false,
     plugins: [
-      react(),
+      react({
+        reactCompiler: true,
+      }),
       tailwindcss(),
       {
         name: "move-manifest",
-        closeBundle() {
+        closeBundle: async () => {
+          const fs = await import("fs");
           const manifestSrc = resolve(outDir, ".vite/manifest.json");
           const manifestDest = resolve(outDir, "manifest.json");
           try {
-            if (existsSync(manifestSrc)) {
-              const data = readFileSync(manifestSrc, "utf-8");
-              mkdirSync(outDir, { recursive: true });
-              writeFileSync(manifestDest, data);
+            if (fs.existsSync(manifestSrc)) {
+              const data = fs.readFileSync(manifestSrc, "utf-8");
+              fs.mkdirSync(outDir, { recursive: true });
+              fs.writeFileSync(manifestDest, data);
               console.log(`manifest.json copiado a ${manifestDest}`);
             }
           } catch (e) {
