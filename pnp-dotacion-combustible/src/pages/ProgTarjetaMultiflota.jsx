@@ -3,6 +3,7 @@ import { useSelectStore } from "../store/selectStore";
 import CustomElement from "../components/CustomElement";
 import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { AlertDialog } from "../components/AlertDialog";
 import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
@@ -23,6 +24,10 @@ const ProgTarjetaMultiflota = () => {
   const [tipoToast, setTipoToast] = useState("success");
   const [showNewTarjeta, setShowNewTarjeta] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [alertState, setAlertState] = useState({
+    visible: false,
+    message: "",
+  });
 
   const elementosRef = useRef([]);
 
@@ -195,6 +200,7 @@ const ProgTarjetaMultiflota = () => {
   const handleEnvio = useCallback(async () => {
     const nuevosData = [...valoresCambiados.data];
     const nuevosCampos = [...valoresCambiados.campos];
+    const nuevosItems = [...valoresCambiados.items];
     const setHidden = new Set();
     let dataEnviarCabecera = "";
 
@@ -212,13 +218,15 @@ const ProgTarjetaMultiflota = () => {
     hiddenElements.forEach((el) => {
       const campo = el.dataset.campo ?? "";
       const value = el.dataset.value ?? "";
-      setHidden.add(JSON.stringify({ campo, value }));
+      const item = el.dataset.item ?? "";
+      setHidden.add(JSON.stringify({ campo, value, item }));
     });
 
-    setHidden.forEach((item) => {
-      const { campo, value } = JSON.parse(item);
+    setHidden.forEach((el) => {
+      const { campo, value, item } = JSON.parse(el);
       nuevosCampos.unshift(campo);
       nuevosData.unshift(value);
+      nuevosItems.unshift(item);
     });
 
     const nroTarjetaMultipago = nuevosData?.[2] ?? "";
@@ -232,31 +240,40 @@ const ProgTarjetaMultiflota = () => {
         });
 
       if (nroTarjetaDuplicado && nroTarjetaDuplicado.length > 0) {
-        alert("No se permite Nro Tarjeta Duplicado, por favor verifique ...");
+        setAlertState({
+          visible: true,
+          message:
+            "No se permite Nro Tarjeta Duplicado, por favor verifique ...",
+        });
         return;
       }
     }
 
-    const dataValidar = (nuevosCampos ?? []).reduce((acc, key, i) => {
+    const dataValidar = (nuevosItems ?? []).reduce((acc, key, i) => {
       acc[key] = nuevosData[i];
       return acc;
     }, {});
 
-    const valida75 = String(dataValidar["7.5"] ?? "");
+    const valida75 = String(dataValidar[2] ?? "");
     const regExp = /^[A-Za-z0-9]+$/;
     if (valida75 !== "" && !regExp.test(valida75)) {
-      alert(
-        "Sólo se permiten letras (A-Z, a-z) y números (0-9). Por favor corrija.",
-      );
+      setAlertState({
+        visible: true,
+        message:
+          "Sólo se permiten letras (A-Z, a-z) y números (0-9). Por favor corrija.",
+      });
       return;
     }
 
     if (
-      dataValidar["7.6"] !== undefined &&
-      dataValidar["7.7"] === undefined &&
-      (dataValidar["7.8"] === undefined || dataValidar["7.8"] === "0")
+      dataValidar[3] !== undefined &&
+      dataValidar[4] === undefined &&
+      (dataValidar[5] === undefined || dataValidar[5] === "0")
     ) {
-      alert("Debe Activar la Tarjeta");
+      setAlertState({
+        visible: true,
+        message: "Debe Activar la Tarjeta",
+      });
       return;
     }
 
@@ -277,11 +294,16 @@ const ProgTarjetaMultiflota = () => {
 
       if (result) {
         if (result.trim().startsWith("duplicado")) {
-          alert("El nro de Tarjeta ya existe, por favor verifique ...");
+          setAlertState({
+            visible: true,
+            message: "El nro de Tarjeta ya existe, por favor verifique ...",
+          });
         } else if (result.trim().startsWith("existe")) {
-          alert(
-            "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
-          );
+          setAlertState({
+            visible: true,
+            message:
+              "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
+          });
         } else {
           if (result.trim() !== "") {
             setMensajeToast("Datos Guardados Correctamente ...");
@@ -598,7 +620,10 @@ const ProgTarjetaMultiflota = () => {
         }
       });
     } else {
-      alert("La tarjeta debe estar cancelada para poder crear una nueva");
+      setAlertState({
+        visible: true,
+        message: "La tarjeta debe estar cancelada para poder crear una nueva",
+      });
     }
   };
 
@@ -844,6 +869,12 @@ const ProgTarjetaMultiflota = () => {
           />
         )}
       </div>
+      {alertState.visible && (
+        <AlertDialog
+          message={alertState.message}
+          onClose={() => setAlertState({ visible: false, message: "" })}
+        />
+      )}
     </>
   );
 };

@@ -13,6 +13,9 @@ import useFetch from "../hooks/useFetch";
 import useLazyFetch from "../hooks/useLazyFetch";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { AlertDialog } from "../components/AlertDialog";
+import useValidationFields from "../hooks/useValidationFields";
 
 const UndPNPControlConsumoDiario = () => {
   const location = useLocation();
@@ -22,19 +25,34 @@ const UndPNPControlConsumoDiario = () => {
   const [datasets, setDatasets] = useState({});
   const [isEdit, setIsEdit] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [mensajeToast, setMensajeToast] = useState("");
+  const [tipoToast, setTipoToast] = useState("success");
+  const [alertState, setAlertState] = useState({
+    visible: false,
+    message: "",
+  });
+  const [showConfirm, setShowConfirm] = useState({
+    visible: false,
+    message: "",
+    onConfirm: null,
+  });
 
   const [events, setEvents] = useState([
     { title: "Evento 1", date: "2025-11-10" },
     { title: "Evento 2", date: "2025-11-15" },
+    { title: "Evento 3", date: "2025-11-21" },
   ]);
 
   const elementosRef = useRef([]);
   const calendarRef = useRef();
-  const skipAsignarRef = useRef(false);
+  // const skipAsignarRef = useRef(false);
 
   const API_RESULT_LISTAR = "/Page/Traer_prog_abastecimiento_diario";
   const { data, loading, error } = useFetch(API_RESULT_LISTAR);
   const { runFetch } = useLazyFetch();
+
+  const validacion = useValidationFields(elementosRef);
+  const { handleClick, mensajeError, esValido, valoresCambiados } = validacion;
 
   const preData = typeof data?.[0] === "string" ? data?.[0]?.split("~") : [];
   const info = preData?.[0]?.split("|") ?? [];
@@ -100,54 +118,47 @@ const UndPNPControlConsumoDiario = () => {
   const findRef = (item) =>
     elementosRef.current?.find?.((el) => el?.dataset?.item === item) ?? null;
 
-  const getDaysOfMonth = (year, month) => {
-    const lastDay = new Date(year, month, 0).getDate();
+  const getDaysOfMonth = () => {
+    const calendarApi = calendarRef.current?.getApi();
+    if (!calendarApi) return [];
+    const start = new Date(calendarApi.view.currentStart);
+    const end = new Date(calendarApi.view.currentEnd);
     const days = [];
-    for (let d = 1; d <= lastDay; d++) {
-      days.push(String(d).padStart(2, "0"));
+    let cursor = new Date(start);
+    while (cursor < end) {
+      days.push(String(cursor.getDate()).padStart(2, "0"));
+      cursor.setDate(cursor.getDate() + 1);
     }
     return days;
   };
 
   const asignarDias = async () => {
     await waitForRefs();
-
-    if (skipAsignarRef.current) {
-      skipAsignarRef.current = false;
-      return;
-    }
-    skipAsignarRef.current = true;
-
-    const elAnno = findRef("1");
-    const elMess = findRef("2");
+    // if (skipAsignarRef.current) {
+    //   skipAsignarRef.current = false;
+    //   return;
+    // }
+    // skipAsignarRef.current = true;
     const elDias = findRef("3");
+    const arrayDias = getDaysOfMonth();
+    elDias.innerHTML = "";
+    arrayDias.forEach((item) => {
+      const opt = document.createElement("option");
+      opt.value = item;
+      opt.textContent = item;
+      elDias.appendChild(opt);
+    });
 
-    const anno = elAnno?.value ?? "";
-    const mess = elMess?.value ?? "";
-
-    if (anno !== "" && mess !== "") {
-      const arrayDias = getDaysOfMonth(anno, mess);
-      elDias.innerHTML = "";
-      arrayDias.forEach((item) => {
-        const opt = document.createElement("option");
-        opt.value = item;
-        opt.textContent = item;
-        elDias.appendChild(opt);
-      });
-
-      elDias.value = arrayDias[0] ?? "";
-      elDias.dataset.value = elDias.value;
-      elDias.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    elDias.value = arrayDias[0] ?? "";
+    elDias.dataset.value = elDias.value;
+    elDias.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
   const moverCalendario = () => {
     const api = calendarRef.current?.getApi();
     if (!api) return;
-
     const elAnno = findRef("1");
     const elMess = findRef("2");
-
     const year = elAnno?.value ?? "";
     const month = elMess?.value ?? "";
 
@@ -155,20 +166,6 @@ const UndPNPControlConsumoDiario = () => {
       api.gotoDate(`${year}-${String(month).padStart(2, "0")}-01`);
     }
   };
-
-  useLayoutEffect(() => {
-    asignarDias();
-  }, []);
-
-  useEffect(() => {
-    waitForRefs().then(() => {
-      const elAnno = findRef("1");
-      const elMess = findRef("2");
-
-      if (elAnno) elAnno.addEventListener("change", moverCalendario);
-      if (elMess) elMess.addEventListener("change", moverCalendario);
-    });
-  }, []);
 
   const handlePopupClose = async (item) => {
     await waitForRefs();
@@ -262,11 +259,186 @@ const UndPNPControlConsumoDiario = () => {
     }
   };
 
+  const resaltarDiaSeleccionado = () => {
+    const elMess = findRef("2")?.value;
+    const elAnno = findRef("1")?.value;
+    const elDia = findRef("3")?.value;
+    if (!elMess || !elAnno || !elDia) return;
+    const fecha = `${elAnno}-${elMess}-${elDia}`;
+    const celda = document.querySelector(`[data-date="${fecha}"]`);
+    document
+      .querySelectorAll(".dia-resaltado")
+      .forEach((el) => el.classList.remove("dia-resaltado"));
+
+    if (celda) {
+      celda.classList.add("dia-resaltado");
+    }
+  };
+
   const handleChange = (item) => {
     const elementos = ["1", "2"];
     if (elementos.includes(item)) {
       asignarDias();
+    } else if (item === "3") {
+      resaltarDiaSeleccionado();
     }
+  };
+
+  const handleLimpiarViewport = () => {
+    console.log("handleLimpiarViewport");
+  };
+
+  const handleClickGuardarDotacionDiaria = useCallback(async () => {
+    const nuevosData = [...valoresCambiados.data];
+    const nuevosCampos = [...valoresCambiados.campos];
+    const nuevosItems = [...valoresCambiados.items];
+    const setHidden = new Set();
+    let dataEnviarCabecera = "";
+
+    if (!nuevosData.length && !nuevosCampos.length) {
+      setMensajeToast("NO existen datos que enviar");
+      setTipoToast("error");
+      setTimeout(() => setMensajeToast(""), 2000);
+      return;
+    }
+
+    const hiddenElements = elementosRef.current
+      .filter(Boolean)
+      .filter((el) => el?.type === "hidden");
+
+    hiddenElements.forEach((el) => {
+      const campo = el.dataset.campo ?? "";
+      const value = el.dataset.value ?? "";
+      const item = el.dataset.item ?? "";
+      setHidden.add(JSON.stringify({ campo, value, item }));
+    });
+
+    setHidden.forEach((el) => {
+      const { campo, value, item } = JSON.parse(el);
+      nuevosCampos.unshift(campo);
+      nuevosData.unshift(value);
+      nuevosItems.unshift(item);
+    });
+
+    const validarFecha = (nuevosItems ?? []).reduce((acc, key, i) => {
+      acc[key] = nuevosData[i];
+      return acc;
+    }, {});
+    const fechaSeleccion = `${validarFecha[1]}-${validarFecha[2]}-${validarFecha[3]}`;
+    const idx = nuevosItems.findIndex((item) => item === "3");
+    if (idx !== -1) {
+      nuevosData[idx] = fechaSeleccion;
+    }
+    dataEnviarCabecera =
+      usuario.trim() +
+      "~" +
+      nuevosData.join("|") +
+      "|" +
+      nuevosCampos.join("|");
+
+    const formData = new FormData();
+    formData.append("data", dataEnviarCabecera);
+    try {
+      const result = await runFetch("/Home/GrabarTarjetaMultiflotafffff", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (result) {
+        if (result.trim().startsWith("duplicado")) {
+          setAlertState({
+            visible: true,
+            message: "El nro de Tarjeta ya existe, por favor verifique ...",
+          });
+        } else if (result.trim().startsWith("existe")) {
+          setAlertState({
+            visible: true,
+            message:
+              "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
+          });
+        } else {
+          if (result.trim() !== "") {
+            setMensajeToast("Datos Guardados Correctamente ...");
+            setTipoToast("success");
+            setIsEdit(true);
+
+            const rpta = result.trim().split("^");
+            const elPK = elementosRef.current
+              .filter(Boolean)
+              .find((el) => el?.dataset?.item === "10");
+            elPK.dataset.value = rpta?.[0];
+            if (rpta.length > 1) {
+              const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
+              const primerReg = arregloDetalle[2].split("|");
+              // if (primerReg[2].trim() !== "") {
+              //   setShowNewTarjeta(true);
+              // } else {
+              //   setShowNewTarjeta(false);
+              // }
+
+              // setConfigTable((prev) => ({
+              //   ...prev,
+              //   listaDatos: arregloDetalle,
+              // }));
+            }
+          }
+
+          elementosRef.current.forEach((el) => {
+            if (!el) return;
+            el.dataset.valor = el.dataset.value ?? "";
+          });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setMensajeToast("Error al guardar la informacion ...");
+      setTipoToast("error");
+    } finally {
+      setTimeout(() => {
+        setMensajeToast("");
+      }, 2000);
+    }
+  }, [valoresCambiados, usuario, runFetch]);
+
+  useLayoutEffect(() => {
+    asignarDias();
+  }, []);
+
+  useEffect(() => {
+    if (esValido) {
+      handleClickGuardarDotacionDiaria();
+    }
+  }, [esValido, handleClickGuardarDotacionDiaria]);
+
+  useEffect(() => {
+    waitForRefs().then(() => {
+      const elAnno = findRef("1");
+      const elMess = findRef("2");
+      if (elAnno) elAnno.addEventListener("change", moverCalendario);
+      if (elMess) elMess.addEventListener("change", moverCalendario);
+    });
+  }, []);
+
+  useEffect(() => {
+    const elAnno = findRef("1");
+    const elMess = findRef("2");
+    if (elAnno?.value && elMess?.value) {
+      const fecha = `${elAnno.value}-${elMess.value}-01`;
+      setTimeout(() => {
+        if (calendarRef.current) {
+          const api = calendarRef.current?.getApi();
+          api.gotoDate(fecha);
+        }
+      }, 0);
+    }
+  }, []);
+
+  const handleMostrarInfoFullCalendar = (info) => {
+    const fechaInicio = info.event.start;
+    const fechaEvento = fechaInicio.toISOString().slice(0, 10);
+
+    console.log("Buscar informacio del evento:", info.event.title);
+    console.log("fecha:", fechaEvento);
   };
 
   const llenarCombos = (valor) => {
@@ -429,6 +601,48 @@ const UndPNPControlConsumoDiario = () => {
             </div>
           ),
       )}
+      <div className="mt-8 mb-2">
+        {mensajeError && (
+          <div className="mt-3 p-3 text-sm text-white bg-red-400 rounded-md shadow-md animate-bounce">
+            {mensajeError}
+          </div>
+        )}
+        {mensajeToast && (
+          <div
+            className={`mt-3 p-3 text-sm rounded-md shadow-md ${
+              tipoToast === "success"
+                ? "bg-green-700 text-white animate-bounce"
+                : tipoToast === "warning"
+                  ? "bg-yellow-400 text-black animate-bounce"
+                  : "bg-red-400 text-white animate-bounce"
+            }`}
+          >
+            {mensajeToast}
+          </div>
+        )}
+        <div className="flex justify-end items-center w-full gap-4 mt-8 mb-2">
+          <button
+            type="button"
+            onClick={() =>
+              setShowConfirm({
+                visible: true,
+                message: "¿Deseas guardar los cambios?",
+                onConfirm: handleClick,
+              })
+            }
+            className="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-900 transition"
+          >
+            GUARDAR DOTACION DIARIA
+          </button>
+          <button
+            type="button"
+            onClick={handleLimpiarViewport}
+            className="px-4 py-2 rounded-md shadow-sm bg-gray-300 text-black cursor-pointer opacity-50"
+          >
+            LIMPIAR
+          </button>
+        </div>
+      </div>
       <div style={{ width: "100%", margin: "0 auto" }}>
         <FullCalendar
           ref={calendarRef}
@@ -443,27 +657,38 @@ const UndPNPControlConsumoDiario = () => {
             right: "",
           }}
           eventClick={(info) => {
-            alert(`Hiciste clic en: ${info.event.title}`);
+            setShowConfirm({
+              visible: true,
+              message: "¿Está seguro de mostrar info seleccionada?",
+              onConfirm: () => handleMostrarInfoFullCalendar(info),
+            });
           }}
-          datesSet={(info) => {
-            const fechaVisibleInicio = info.start;
-            const fechaMesReal = info.view.calendar.getDate();
-            const elAnno = findRef("1");
-            const elMess = findRef("2");
-            if (elAnno && elMess) {
-              elAnno.value = fechaVisibleInicio.getFullYear();
-              elAnno.dataset.value = elAnno.value;
-              const mesSeleccion = String(fechaMesReal.getMonth() + 1).padStart(
-                2,
-                "0",
-              );
-              elMess.value = mesSeleccion;
-              elMess.dataset.value = mesSeleccion;
-              asignarDias();
-            }
-          }}
+          // datesSet={(info) => {
+          //   const anno = info.start.getFullYear();
+          //   const fechaMesReal = String(
+          //     info.view.calendar.getDate() + 1,
+          //   ).padStart(2, "0");
+          // }}
         />
       </div>
+      {showConfirm.visible && (
+        <ConfirmDialog
+          message={showConfirm.message}
+          onConfirm={() => {
+            showConfirm.onConfirm?.();
+            setShowConfirm({ visible: false, message: "", onConfirm: null });
+          }}
+          onCancel={() =>
+            setShowConfirm({ visible: false, message: "", onConfirm: null })
+          }
+        />
+      )}
+      {alertState.visible && (
+        <AlertDialog
+          message={alertState.message}
+          onClose={() => setAlertState({ visible: false, message: "" })}
+        />
+      )}
     </>
   );
 };
