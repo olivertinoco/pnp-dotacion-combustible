@@ -127,4 +127,22 @@ public class PageController : Controller
         }
     }
 
+    [HttpPost("/Page/GrabarDotacionCombustibleDiarioSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")]
+    public string GrabarDotacionCombustibleDiario()
+    {
+        try
+        {
+            string rpta = "";
+            string datos = Request.Form["data"].ToString();
+            daSQL odaSQL = new daSQL(_configuration, "CNX");
+            rpta = odaSQL.ejecutarComando("dbo.usp_prog_tarjeta_multiflota_carga_masivo", "@data", datos);
+            return rpta;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar la data...");
+            return "error";
+        }
+    }
+
 }

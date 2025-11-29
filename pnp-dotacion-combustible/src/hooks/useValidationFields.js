@@ -6,6 +6,7 @@ const useValidationFields = (elementosRef) => {
   const [valoresCambiados, setValoresCambiados] = useState({
     data: [],
     campos: [],
+    items: [],
   });
 
   const valoresRef = useRef(valoresCambiados);
@@ -18,6 +19,7 @@ const useValidationFields = (elementosRef) => {
     let hayErrores = false;
     const nuevosData = [];
     const nuevosCampos = [];
+    const nuevosItems = [];
 
     if (Array.isArray(elementosRef.current)) {
       elementosRef.current = elementosRef.current.filter(
@@ -49,10 +51,12 @@ const useValidationFields = (elementosRef) => {
       const dsValue = input.dataset?.value ?? "";
       const dsValor = input.dataset?.valor ?? "";
       const dsCampo = input.dataset?.campo ?? "";
+      const dsItem = input.dataset?.item ?? "";
 
       if (dsValue !== dsValor && !dsCampo.startsWith("100")) {
         nuevosData.push(dsValue);
         nuevosCampos.push(dsCampo);
+        nuevosItems.push(dsItem);
       }
 
       const isRequired = input?.dataset.required === "true" || input?.required;
@@ -80,14 +84,20 @@ const useValidationFields = (elementosRef) => {
 
     const camposLimpios = [];
     const dataLimpios = [];
+    const itemsLimpios = [];
     nuevosCampos.forEach((campo, i) => {
       if (campo && !camposLimpios.includes(campo)) {
         camposLimpios.push(campo);
         dataLimpios.push(nuevosData[i]);
+        itemsLimpios.push(nuevosItems[i]);
       }
     });
 
-    const nuevosValores = { data: dataLimpios, campos: camposLimpios };
+    const nuevosValores = {
+      data: dataLimpios,
+      campos: camposLimpios,
+      items: itemsLimpios,
+    };
     setValoresCambiados(nuevosValores);
     valoresRef.current = nuevosValores;
 
