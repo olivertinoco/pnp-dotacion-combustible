@@ -1,0 +1,1 @@
+import{u as o,j as s}from"../index.BrPz-MZr.js";const l=()=>{const a=o().state?.value;return s.jsxs("label",{className:"flex flex-col gap-2 mb-4 text-4xl",children:[s.jsx("span",{className:"font-normal",children:"pagina en construccion..."}),s.jsxs("p",{className:"text-2xl",children:["Este es el usuario: ",a]})]})};export{l as default};

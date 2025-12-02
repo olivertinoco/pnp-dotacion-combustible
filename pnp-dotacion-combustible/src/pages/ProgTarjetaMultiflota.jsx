@@ -265,6 +265,24 @@ const ProgTarjetaMultiflota = () => {
       return;
     }
 
+    const elCheck = elementosRef.current
+      .filter(Boolean)
+      .find((el) => el.dataset.item === "5");
+    if (elCheck) {
+      const value = elCheck.dataset.value;
+      const valor = elCheck.dataset.valor;
+      if (value === valor && value === "1") {
+        const check = elCheck.checked;
+        if (!check) {
+          setAlertState({
+            visible: true,
+            message: "Debe Activar la Tarjeta",
+          });
+          return;
+        }
+      }
+    }
+
     if (
       dataValidar[3] !== undefined &&
       dataValidar[4] === undefined &&
@@ -620,10 +638,28 @@ const ProgTarjetaMultiflota = () => {
         }
       });
     } else {
-      setAlertState({
-        visible: true,
-        message: "La tarjeta debe estar cancelada para poder crear una nueva",
-      });
+      const elemento = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "2");
+      if (elemento) {
+        elemento.dataset.valor = "";
+        elemento.dataset.value = "";
+        elemento.value = "";
+      }
+      const elemento2 = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "3");
+      if (elemento2) {
+        elemento2.dataset.valor = "";
+        elemento2.dataset.value = "";
+        elemento2.value = "";
+      }
+      const elcheck = elementosRef.current
+        .filter(Boolean)
+        .find((el) => el?.dataset?.item === "5");
+      if (elcheck) {
+        elcheck.checked = false;
+      }
     }
   };
 

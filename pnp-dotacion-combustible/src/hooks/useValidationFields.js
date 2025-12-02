@@ -63,7 +63,8 @@ const useValidationFields = (elementosRef) => {
       if (isRequired) {
         let value = dsValue;
         if (input.type === "checkbox" || input.type === "radio") {
-          value = input.checked ? "1" : "";
+          // value = input.checked ? "1" : "";
+          value = "ok";
         }
         if (input.multiple && typeof value === "string") {
           value = value

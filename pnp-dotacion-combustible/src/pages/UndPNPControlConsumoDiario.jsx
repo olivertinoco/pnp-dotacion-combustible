@@ -338,66 +338,70 @@ const UndPNPControlConsumoDiario = () => {
 
     const formData = new FormData();
     formData.append("data", dataEnviarCabecera);
-    try {
-      const result = await runFetch("/Home/GrabarTarjetaMultiflotafffff", {
-        method: "POST",
-        body: formData,
-      });
 
-      if (result) {
-        if (result.trim().startsWith("duplicado")) {
-          setAlertState({
-            visible: true,
-            message: "El nro de Tarjeta ya existe, por favor verifique ...",
-          });
-        } else if (result.trim().startsWith("existe")) {
-          setAlertState({
-            visible: true,
-            message:
-              "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
-          });
-        } else {
-          if (result.trim() !== "") {
-            setMensajeToast("Datos Guardados Correctamente ...");
-            setTipoToast("success");
-            setIsEdit(true);
+    console.log("nuevosData", nuevosData);
+    console.log("nuevosCampos", nuevosCampos);
 
-            const rpta = result.trim().split("^");
-            const elPK = elementosRef.current
-              .filter(Boolean)
-              .find((el) => el?.dataset?.item === "10");
-            elPK.dataset.value = rpta?.[0];
-            if (rpta.length > 1) {
-              const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
-              const primerReg = arregloDetalle[2].split("|");
-              // if (primerReg[2].trim() !== "") {
-              //   setShowNewTarjeta(true);
-              // } else {
-              //   setShowNewTarjeta(false);
-              // }
+    // try {
+    //   const result = await runFetch("/Home/GrabarTarjetaMultiflotafffff", {
+    //     method: "POST",
+    //     body: formData,
+    //   });
 
-              // setConfigTable((prev) => ({
-              //   ...prev,
-              //   listaDatos: arregloDetalle,
-              // }));
-            }
-          }
+    //   if (result) {
+    //     if (result.trim().startsWith("duplicado")) {
+    //       setAlertState({
+    //         visible: true,
+    //         message: "El nro de Tarjeta ya existe, por favor verifique ...",
+    //       });
+    //     } else if (result.trim().startsWith("existe")) {
+    //       setAlertState({
+    //         visible: true,
+    //         message:
+    //           "Existe una tarjeta activa para ese vehiculo, por favor verifique ...",
+    //       });
+    //     } else {
+    //       if (result.trim() !== "") {
+    //         setMensajeToast("Datos Guardados Correctamente ...");
+    //         setTipoToast("success");
+    //         setIsEdit(true);
 
-          elementosRef.current.forEach((el) => {
-            if (!el) return;
-            el.dataset.valor = el.dataset.value ?? "";
-          });
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      setMensajeToast("Error al guardar la informacion ...");
-      setTipoToast("error");
-    } finally {
-      setTimeout(() => {
-        setMensajeToast("");
-      }, 2000);
-    }
+    //         const rpta = result.trim().split("^");
+    //         const elPK = elementosRef.current
+    //           .filter(Boolean)
+    //           .find((el) => el?.dataset?.item === "10");
+    //         elPK.dataset.value = rpta?.[0];
+    //         if (rpta.length > 1) {
+    //           const arregloDetalle = rpta.slice(1).flatMap((p) => p.split("~"));
+    //           const primerReg = arregloDetalle[2].split("|");
+    //           // if (primerReg[2].trim() !== "") {
+    //           //   setShowNewTarjeta(true);
+    //           // } else {
+    //           //   setShowNewTarjeta(false);
+    //           // }
+
+    //           // setConfigTable((prev) => ({
+    //           //   ...prev,
+    //           //   listaDatos: arregloDetalle,
+    //           // }));
+    //         }
+    //       }
+
+    //       elementosRef.current.forEach((el) => {
+    //         if (!el) return;
+    //         el.dataset.valor = el.dataset.value ?? "";
+    //       });
+    //     }
+    //   }
+    // } catch (err) {
+    //   console.error(err);
+    //   setMensajeToast("Error al guardar la informacion ...");
+    //   setTipoToast("error");
+    // } finally {
+    //   setTimeout(() => {
+    //     setMensajeToast("");
+    //   }, 2000);
+    // }
   }, [valoresCambiados, usuario, runFetch]);
 
   useLayoutEffect(() => {
@@ -420,18 +424,16 @@ const UndPNPControlConsumoDiario = () => {
   }, []);
 
   useEffect(() => {
-    const elAnno = findRef("1");
-    const elMess = findRef("2");
-    if (elAnno?.value && elMess?.value) {
-      const fecha = `${elAnno.value}-${elMess.value}-01`;
-      setTimeout(() => {
-        if (calendarRef.current) {
-          const api = calendarRef.current?.getApi();
-          api.gotoDate(fecha);
-        }
-      }, 0);
+    waitForRefs().then(() => {
+      moverCalendario();
+    });
+    const anno = findRef("1");
+    const mes = findRef("2");
+    if (anno && mes) {
+      anno.dataset.valor = "";
+      mes.dataset.valor = "";
     }
-  }, []);
+  }, [findRef("1")?.value, findRef("2")?.value]);
 
   const handleMostrarInfoFullCalendar = (info) => {
     const fechaInicio = info.event.start;
