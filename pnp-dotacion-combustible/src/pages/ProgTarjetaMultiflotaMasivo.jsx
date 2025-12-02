@@ -6,6 +6,7 @@ import { BaseTablaMatriz2 } from "../components/BaseTablaMatriz2";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import useLazyFetch from "../hooks/useLazyFetch";
 import * as XLSX from "xlsx";
+import { AlertDialog } from "../components/AlertDialog";
 
 const ProgTarjetaMultiflotaMasivo = () => {
   const location = useLocation();
@@ -14,13 +15,17 @@ const ProgTarjetaMultiflotaMasivo = () => {
   const [resultadoGlobal, setResultadoGlobal] = useState([]);
   const [configTable, setConfigTable] = useState({});
   const [isEdit, setIsEdit] = useState(false);
-  const [observado, setObservado] = useState(false);
+  const [obsErrores, setObsErrores] = useState(false);
   const [procesar, setProcesar] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [mensajeToast, setMensajeToast] = useState("");
   const [tipoToast, setTipoToast] = useState("success");
   const [isLoading, setIsLoading] = useState(false);
   const [disabledExcel, setDisabledExcel] = useState(false);
+  const [alertState, setAlertState] = useState({
+    visible: false,
+    message: "",
+  });
 
   useEffect(() => {
     setResultadoGlobal([]);
@@ -38,6 +43,8 @@ const ProgTarjetaMultiflotaMasivo = () => {
     const resultado = [];
     const invalidas = [];
     const contadorNroTarjeta = {};
+    const contadorPlacaInterna = {};
+    const contadorPlacaRodaje = {};
 
     rows.forEach((fila, idx) => {
       const pos = idx + 2;
@@ -46,7 +53,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
       const filaUnida = `${pos}|${valores.join("|")}`;
       const invalida = !valores[0] || !valores[2];
       if (invalida) {
-        invalidas.push(filaUnida);
+        invalidas.push(`${filaUnida}|datos incompletos`);
         return;
       }
 
@@ -54,7 +61,23 @@ const ProgTarjetaMultiflotaMasivo = () => {
       if (!contadorNroTarjeta[nroTarjeta]) {
         contadorNroTarjeta[nroTarjeta] = [];
       }
-      contadorNroTarjeta[nroTarjeta].push(filaUnida);
+      contadorNroTarjeta[nroTarjeta].push(`${filaUnida}|Nro tarjeta duplicado`);
+
+      const nroPlacaInterna = valores[0];
+      if (!contadorPlacaInterna[nroPlacaInterna]) {
+        contadorPlacaInterna[nroPlacaInterna] = [];
+      }
+      contadorPlacaInterna[nroPlacaInterna].push(
+        `${filaUnida}|Placa Interna duplicado`,
+      );
+
+      const nroPlacaRodaje = valores[1];
+      if (!contadorPlacaRodaje[nroPlacaRodaje]) {
+        contadorPlacaRodaje[nroPlacaRodaje] = [];
+      }
+      contadorPlacaRodaje[nroPlacaRodaje].push(
+        `${filaUnida}|Placa Rodaje duplicado`,
+      );
 
       resultado.push(filaUnida);
     });
@@ -63,23 +86,54 @@ const ProgTarjetaMultiflotaMasivo = () => {
       .filter((item) => item.length > 1)
       .flat();
 
-    const cabeceras = [
-      "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota",
-      "50|200|200|400",
-    ];
+    const duplicadoPlacaInterna = Object.values(contadorPlacaInterna)
+      .filter((item) => item.length > 1)
+      .flat();
 
+    const duplicadoPlacaRodaje = Object.values(contadorPlacaRodaje)
+      .filter((item) => item.length > 1)
+      .flat()
+      .filter((x) => {
+        const cols = x.split("|");
+        return cols[2].trim() !== "";
+      });
+
+    let cabeceras;
     if (invalidas.length > 0) {
+      cabeceras = [
+        "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|DATOS INVALIDOS",
+        "50|200|200|400|600",
+      ];
       invalidas.unshift(cabeceras);
       setResultadoGlobal(invalidas.flat());
-      setObservado(true);
     } else if (duplicadoTarjeta.length > 0) {
+      cabeceras = [
+        "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|Nro Tarjetas Multiflota Duplicados",
+        "50|200|200|400|800",
+      ];
       duplicadoTarjeta.unshift(cabeceras);
       setResultadoGlobal(duplicadoTarjeta.flat());
-      setObservado(true);
+    } else if (duplicadoPlacaInterna.length > 0) {
+      cabeceras = [
+        "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|Nro Placa Interna Duplicados",
+        "50|200|200|400|800",
+      ];
+      duplicadoPlacaInterna.unshift(cabeceras);
+      setResultadoGlobal(duplicadoPlacaInterna.flat());
+    } else if (duplicadoPlacaRodaje.length > 0) {
+      cabeceras = [
+        "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota|Nro Placa Rodaje Duplicados",
+        "50|200|200|400|800",
+      ];
+      duplicadoPlacaRodaje.unshift(cabeceras);
+      setResultadoGlobal(duplicadoPlacaRodaje.flat());
     } else {
+      cabeceras = [
+        "Nro|Placa Interna|Placa Rodaje|Nro Tarjeta Multiflota",
+        "50|200|200|400",
+      ];
       resultado.unshift(cabeceras);
       setResultadoGlobal(resultado.flat());
-      setObservado(false);
     }
 
     setDisabledExcel(true);
@@ -87,6 +141,13 @@ const ProgTarjetaMultiflotaMasivo = () => {
 
   const handleNuevaTarjeta = () => {
     if (resultadoGlobal.length > 0) {
+      const archivoErrores = resultadoGlobal[0].split("|").length;
+      if (archivoErrores === 5) {
+        setObsErrores(true);
+      } else {
+        setObsErrores(false);
+      }
+
       const titulo = "RESULTADO DE CARGA MASIVA DE TARJETAS MULTIFLOTA:";
       setConfigTable((prev) => ({
         ...prev,
@@ -98,7 +159,10 @@ const ProgTarjetaMultiflotaMasivo = () => {
       setIsEdit(true);
       setProcesar(true);
     } else {
-      alert("Debe cargar un archivo para procesar...");
+      setAlertState({
+        visible: true,
+        message: "Debe cargar un archivo para procesar...",
+      });
     }
   };
 
@@ -109,7 +173,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
       listaDatos: resultadoGlobal,
     }));
     setIsEdit(false);
-    setObservado(true);
+    setObsErrores(false);
     setProcesar(false);
     setUploaderKey(Date.now());
     setDisabledExcel(false);
@@ -142,6 +206,7 @@ const ProgTarjetaMultiflotaMasivo = () => {
         setTipoToast("success");
         setIsEdit(true);
         setProcesar(false);
+        setObsErrores(true);
 
         if (result.trim() !== "ok") {
           if (result.trim().startsWith("error")) {
@@ -222,8 +287,13 @@ const ProgTarjetaMultiflotaMasivo = () => {
       <div className="flex justify-end items-center w-full gap-4 mt-8 mb-2">
         <button
           type="button"
+          disabled={!!obsErrores}
           onClick={procesar ? handleSubirRegistros : handleNuevaTarjeta}
-          className="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-900 transition"
+          className="
+              px-4 py-2 rounded-md text-white transition
+              bg-green-700 hover:bg-green-900
+              disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed
+            "
         >
           {procesar ? "PROCESAR" : "MOSTRAR CARGA"}
         </button>
@@ -271,6 +341,12 @@ const ProgTarjetaMultiflotaMasivo = () => {
           </div>
         )}
       </div>
+      {alertState.visible && (
+        <AlertDialog
+          message={alertState.message}
+          onClose={() => setAlertState({ visible: false, message: "" })}
+        />
+      )}
     </>
   );
 };

@@ -1,0 +1,1 @@
+import{u as a,j as s}from"../index.DKk2s01l.js";const l=()=>{const e=a().state?.value;return s.jsxs("label",{className:"flex flex-col gap-2 mb-4 text-4xl",children:[s.jsx("span",{className:"font-normal",children:"pagina en construccion..."}),s.jsxs("p",{className:"text-2xl",children:["Este es el usuario: ",e]})]})};export{l as default};
